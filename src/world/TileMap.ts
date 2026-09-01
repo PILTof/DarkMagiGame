@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { MAP_HEIGHT, MAP_WIDTH, TILE_SIZE } from "../config/gameConfig.ts";
-import { GridCoords } from "./GridCoords.ts";
+import { GridCoords, type GridPos } from "./GridCoords.ts";
 import { Tile, type TileType } from "./Tile.ts";
 
 const TILE_COLORS: Record<TileType, number> = {
@@ -63,6 +63,46 @@ export class TileMap {
       return null;
     }
     return this.tiles[r]![q]!;
+  }
+
+  /** Мировая позиция центра гекса с учётом смещения карты. */
+  gridToWorldPosition(q: number, r: number, y = 0): THREE.Vector3 {
+    const local = GridCoords.gridToWorld(q, r);
+    return new THREE.Vector3(
+      local.x + this.group.position.x,
+      y,
+      local.z + this.group.position.z,
+    );
+  }
+
+  /** Мировые координаты → ближайший гекс карты. */
+  worldToGrid(worldPos: THREE.Vector3): GridPos {
+    const local = new THREE.Vector3(
+      worldPos.x - this.group.position.x,
+      worldPos.y,
+      worldPos.z - this.group.position.z,
+    );
+    return GridCoords.worldToGrid(local);
+  }
+
+  findSpawnTile(): { q: number; r: number } {
+    const centerQ = Math.floor(MAP_WIDTH / 2);
+    const centerR = Math.floor(MAP_HEIGHT / 2);
+    const center = this.getTile(centerQ, centerR);
+    if (center?.walkable) {
+      return { q: centerQ, r: centerR };
+    }
+
+    for (let r = 0; r < MAP_HEIGHT; r++) {
+      for (let q = 0; q < MAP_WIDTH; q++) {
+        const tile = this.getTile(q, r);
+        if (tile?.walkable) {
+          return { q, r };
+        }
+      }
+    }
+
+    return { q: centerQ, r: centerR };
   }
 
   private centerMap(): void {

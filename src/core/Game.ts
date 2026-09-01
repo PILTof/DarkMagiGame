@@ -1,6 +1,7 @@
 import { Clock } from "./Clock.ts";
 import { EventBus } from "./EventBus.ts";
 import { EntityManager } from "../entities/EntityManager.ts";
+import { createPlayer } from "../entities/Player.ts";
 import { AssetLoader } from "../engine/AssetLoader.ts";
 import { Engine } from "../engine/Engine.ts";
 import { IsometricCamera } from "../engine/IsometricCamera.ts";
@@ -36,10 +37,16 @@ export class Game {
     const entityManager = new EntityManager();
     const pathfinding = new PathfindingService(tileMap);
 
+    const spawn = tileMap.findSpawnTile();
+    const player = createPlayer(spawn);
+    entityManager.add(player, this.engine.scene);
+    const spawnPos = tileMap.gridToWorldPosition(spawn.q, spawn.r);
+    player.mesh.position.copy(spawnPos);
+
     this.systems.push(
-      new InputSystem(this.engine, tileMap, this.eventBus),
+      new InputSystem(this.engine, this.camera, tileMap, this.eventBus),
       new SelectionSystem(this.eventBus),
-      new MovementSystem(entityManager, pathfinding, this.eventBus),
+      new MovementSystem(entityManager, pathfinding, tileMap, this.eventBus),
       new AnimationSystem(entityManager),
     );
 

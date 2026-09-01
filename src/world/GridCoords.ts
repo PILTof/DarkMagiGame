@@ -33,6 +33,13 @@ export class GridCoords {
     ];
   }
 
+  /** Расстояние между двумя гексами в шагах. */
+  static distance(a: GridPos, b: GridPos): number {
+    const dq = a.q - b.q;
+    const dr = a.r - b.r;
+    return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2;
+  }
+
   private static roundAxial(q: number, r: number): GridPos {
     const s = -q - r;
     let rq = Math.round(q);

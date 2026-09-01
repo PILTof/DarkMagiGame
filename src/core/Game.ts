@@ -1,0 +1,59 @@
+import { Clock } from "./Clock.ts";
+import { EventBus } from "./EventBus.ts";
+import { EntityManager } from "../entities/EntityManager.ts";
+import { AssetLoader } from "../engine/AssetLoader.ts";
+import { Engine } from "../engine/Engine.ts";
+import { IsometricCamera } from "../engine/IsometricCamera.ts";
+import { Lights } from "../engine/Lights.ts";
+import { PointerHandler } from "../input/PointerHandler.ts";
+import { AnimationSystem } from "../systems/AnimationSystem.ts";
+import { InputSystem } from "../systems/InputSystem.ts";
+import { MovementSystem } from "../systems/MovementSystem.ts";
+import { SelectionSystem } from "../systems/SelectionSystem.ts";
+import type { System } from "../systems/System.ts";
+import { PathfindingService } from "../world/PathfindingService.ts";
+import { TileMap } from "../world/TileMap.ts";
+
+export class Game {
+  private readonly clock = new Clock();
+  private readonly eventBus = new EventBus();
+  private readonly engine: Engine;
+  private readonly systems: System[] = [];
+
+  constructor(container: HTMLElement) {
+    this.engine = new Engine(container);
+
+    const camera = new IsometricCamera();
+    this.engine.setCamera(camera);
+    new PointerHandler(camera);
+
+    new Lights().addTo(this.engine.scene);
+
+    const tileMap = new TileMap(this.engine.scene);
+    tileMap.build();
+
+    const entityManager = new EntityManager();
+    const pathfinding = new PathfindingService(tileMap);
+
+    this.systems.push(
+      new InputSystem(this.engine, tileMap, this.eventBus),
+      new SelectionSystem(this.eventBus),
+      new MovementSystem(entityManager, pathfinding, this.eventBus),
+      new AnimationSystem(entityManager),
+    );
+
+    void new AssetLoader();
+  }
+
+  start(): void {
+    const loop = (): void => {
+      requestAnimationFrame(loop);
+      const dt = this.clock.getDelta();
+      for (const system of this.systems) {
+        system.update(dt);
+      }
+      this.engine.render();
+    };
+    loop();
+  }
+}

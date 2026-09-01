@@ -65,8 +65,7 @@ export class MovementSystem implements System {
     const startPos = player.mesh.position.clone();
     const startGrid = this.tileMap.worldToGrid(startPos);
     const targetGrid = this.tileMap.worldToGrid(new THREE.Vector3(x, 0, z));
-    const targetWalkable =
-      this.tileMap.getTile(targetGrid.q, targetGrid.r)?.walkable ?? false;
+    const targetWalkable = this.tileMap.isWalkable(targetGrid.q, targetGrid.r);
 
     if (
       targetWalkable &&

@@ -33,8 +33,7 @@ export class PathfindingService {
       const t = i / steps;
       const sample = new THREE.Vector3(from.x + dx * t, from.y, from.z + dz * t);
       const grid = this.tileMap.worldToGrid(sample);
-      const tile = this.tileMap.getTile(grid.q, grid.r);
-      if (!tile?.walkable) return false;
+      if (!this.tileMap.isWalkable(grid.q, grid.r)) return false;
     }
     return true;
   }
@@ -47,7 +46,7 @@ export class PathfindingService {
    * Полный путь до цели или максимально близкий путь к непроходимому/недостижимому гексу.
    */
   findPathToward(from: GridPos, to: GridPos): PathResult {
-    const goalWalkable = this.tileMap.getTile(to.q, to.r)?.walkable ?? false;
+    const goalWalkable = this.tileMap.isWalkable(to.q, to.r);
 
     if (from.q === to.q && from.r === to.r) {
       return { path: [], reachesGoal: goalWalkable };
@@ -88,8 +87,7 @@ export class PathfindingService {
       openSet.delete(currentKey);
 
       for (const neighbor of GridCoords.neighbors(current.pos.q, current.pos.r)) {
-        const tile = this.tileMap.getTile(neighbor.q, neighbor.r);
-        if (!tile?.walkable) continue;
+        if (!this.tileMap.isWalkable(neighbor.q, neighbor.r)) continue;
 
         const neighborKey = this.key(neighbor);
         const tentativeG = current.g + 1;
@@ -141,8 +139,7 @@ export class PathfindingService {
       }
 
       for (const neighbor of GridCoords.neighbors(current.pos.q, current.pos.r)) {
-        const tile = this.tileMap.getTile(neighbor.q, neighbor.r);
-        if (!tile?.walkable) continue;
+        if (!this.tileMap.isWalkable(neighbor.q, neighbor.r)) continue;
 
         const neighborKey = this.key(neighbor);
         if (closed.has(neighborKey)) continue;

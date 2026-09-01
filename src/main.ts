@@ -7,4 +7,10 @@ if (!container) {
 }
 
 const game = new Game(container);
-game.start();
+
+try {
+  await game.load();
+  game.start();
+} catch (error) {
+  console.error("Failed to start game:", error);
+}

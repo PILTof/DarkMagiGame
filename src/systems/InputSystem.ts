@@ -23,6 +23,6 @@ export class InputSystem implements System {
     // TODO: raycast → tile:click
     void event;
     void this.tileMap;
-    this.eventBus.emit("tile:click", { gx: 0, gy: 0 });
+    this.eventBus.emit("tile:click", { q: 0, r: 0 });
   }
 }

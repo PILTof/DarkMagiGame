@@ -9,6 +9,8 @@ const TILE_COLORS: Record<TileType, number> = {
   water: 0x3d6b8e,
 };
 
+const HEX_HEIGHT = 0.2;
+
 export class TileMap {
   readonly group = new THREE.Group();
   readonly tiles: Tile[][] = [];
@@ -20,44 +22,53 @@ export class TileMap {
   }
 
   build(): void {
-    const geometry = new THREE.BoxGeometry(TILE_SIZE, 0.2, TILE_SIZE);
+    const geometry = new THREE.CylinderGeometry(
+      TILE_SIZE,
+      TILE_SIZE,
+      HEX_HEIGHT,
+      6,
+    );
 
-    for (let gy = 0; gy < MAP_HEIGHT; gy++) {
+    for (let r = 0; r < MAP_HEIGHT; r++) {
       const row: Tile[] = [];
-      for (let gx = 0; gx < MAP_WIDTH; gx++) {
+      for (let q = 0; q < MAP_WIDTH; q++) {
         const type: TileType =
-          (gx + gy) % 7 === 0
+          (q + r) % 7 === 0
             ? "water"
-            : (gx + gy) % 5 === 0
+            : (q + r) % 5 === 0
               ? "stone"
               : "grass";
         const walkable = type !== "water";
-        const tile = new Tile({ gx, gy }, type, walkable);
+        const tile = new Tile({ q, r }, type, walkable);
         row.push(tile);
 
         const material = new THREE.MeshStandardMaterial({
           color: TILE_COLORS[type],
         });
         const mesh = new THREE.Mesh(geometry, material);
-        const worldPos = GridCoords.gridToWorld(gx, gy);
-        mesh.position.set(worldPos.x, -0.1, worldPos.z);
-        mesh.userData = { gx, gy, type: "tile" };
+        mesh.rotation.y = Math.PI / 6;
+        const worldPos = GridCoords.gridToWorld(q, r);
+        mesh.position.set(worldPos.x, -HEX_HEIGHT / 2, worldPos.z);
+        mesh.userData = { q, r, type: "tile" };
         this.group.add(mesh);
       }
       this.tiles.push(row);
     }
 
-    this.group.position.set(
-      -(MAP_WIDTH * TILE_SIZE) / 2 + TILE_SIZE / 2,
-      0,
-      -(MAP_HEIGHT * TILE_SIZE) / 2 + TILE_SIZE / 2,
-    );
+    this.centerMap();
   }
 
-  getTile(gx: number, gy: number): Tile | null {
-    if (gx < 0 || gy < 0 || gx >= MAP_WIDTH || gy >= MAP_HEIGHT) {
+  getTile(q: number, r: number): Tile | null {
+    if (q < 0 || r < 0 || q >= MAP_WIDTH || r >= MAP_HEIGHT) {
       return null;
     }
-    return this.tiles[gy]![gx]!;
+    return this.tiles[r]![q]!;
+  }
+
+  private centerMap(): void {
+    const centerQ = (MAP_WIDTH - 1) / 2;
+    const centerR = (MAP_HEIGHT - 1) / 2;
+    const center = GridCoords.gridToWorld(centerQ, centerR);
+    this.group.position.set(-center.x, 0, -center.z);
   }
 }

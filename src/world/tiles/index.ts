@@ -1,6 +1,6 @@
 import type { GridPos } from "../GridCoords.ts";
+import { DirtTile } from "./DirtTile.ts";
 import { GrassTile } from "./GrassTile.ts";
-import { StoneTile } from "./StoneTile.ts";
 import { Tile, type TileType } from "./Tile.ts";
 import { WaterTile } from "./WaterTile.ts";
 
@@ -9,7 +9,7 @@ export function createTile(type: TileType, pos: GridPos): Tile {
     case "grass":
       return new GrassTile(pos);
     case "stone":
-      return new StoneTile(pos);
+      return new DirtTile(pos);
     case "water":
       return new WaterTile(pos);
   }
@@ -21,7 +21,8 @@ export function resolveTileType(q: number, r: number): TileType {
   return "grass";
 }
 
-export { Tile, type TileType };
+export { DirtTile as StoneTile } from "./DirtTile.ts";
 export { GrassTile } from "./GrassTile.ts";
-export { StoneTile } from "./StoneTile.ts";
 export { WaterTile } from "./WaterTile.ts";
+export { Tile, type TileType };
+

@@ -1,5 +1,5 @@
 {
-  "width": 12,
+  "width": 20,
   "height": 12,
   "terrain": {
     "legend": {
@@ -8,18 +8,18 @@
       "w": "water"
     },
     "rows": [
-      "ggggggwwgggg",
-      "gggssggwwggg",
-      "ggssgggggggg",
-      "gssggggggggg",
-      "gggggggwwggg",
-      "ggggggwwwwgg",
-      "gggggggwwggg",
-      "gggggggggggg",
-      "ggssggggssgg",
-      "gssggggggssg",
-      "gggggggggggg",
-      "gggggggggggg"
+      "ggggggwwgggggggggggg",
+      "gggssggwwgggggggwggg",
+      "ggssggggggggggggsggg",
+      "gssggggggggggsgggggg",
+      "gggggggwwggggggwgggg",
+      "ggggggwwwwggggwwwwgg",
+      "gggggggwwggggggwwwwg",
+      "ggggggggggggggwggggg",
+      "ggssggggssggwggggwgg",
+      "gssggggggssggsggggsg",
+      "ggggggggggggssgggggg",
+      "gggggggggggggggggggg"
     ]
   },
   "objects": [

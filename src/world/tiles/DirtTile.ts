@@ -3,21 +3,20 @@ import { getRandFromArray } from "../../mathutils/GetRandFromArray.ts";
 import type { TileVisualConfig } from "./Tile.ts";
 import { Tile } from "./Tile.ts";
 
-export class GrassTile extends Tile {
+export class DirtTile extends Tile {
     private static TEXTURES: Array<string> = [
-        "/assets/images/grass2.png",
-        "/assets/images/grass3.png",
-        "/assets/images/grass4.png",
-        "/assets/images/grass4.png",
-        "/assets/images/grass4.png",
+        "/assets/images/dirt.png",
+        "/assets/images/dirt2.png",
+        "/assets/images/dirt3.png",
+        "/assets/images/dirt3.png",
+        "/assets/images/dirt3.png",
     ];
-
-    readonly type = "grass" as const;
+    readonly type = "stone" as const;
     readonly walkable = true;
 
     protected getVisualConfig(): TileVisualConfig {
         const loader = new TextureLoader();
-        const texture = loader.load(getRandFromArray(GrassTile.TEXTURES));
+        const texture = loader.load(getRandFromArray(DirtTile.TEXTURES));
         texture.minFilter = NearestFilter;
         texture.magFilter = NearestFilter;
         texture.rotation = MathUtils.degToRad(
@@ -28,9 +27,9 @@ export class GrassTile extends Tile {
 
         return {
             texture: texture,
-            roughness: 0.85,
-            metalness: 0,
-            height: 0.2,
+            roughness: 0.7,
+            metalness: 0.05,
+            height: 0.22,
         };
     }
 }

@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { env } from "../config/env.ts";
+import { DevTools } from "../dev/DevTools.ts";
 import { GridCoords, type GridPos } from "./GridCoords.ts";
 import type { MapData, MapSpawn } from "./map/MapData.ts";
 import { MapObjects } from "./map/MapObjects.ts";
@@ -90,6 +92,16 @@ export class TileMap {
   private buildTerrain(mapData: MapData): void {
     const { legend, rows } = mapData.terrain;
 
+
+    const outlineMaterial = new THREE.MeshToonMaterial({
+      color: 'black',
+      wireframe: true
+    });
+
+    if (env.debug) {
+      DevTools.getInstance().initWireframe(outlineMaterial)
+    }
+
     for (let r = 0; r < mapData.height; r++) {
       const row: Tile[] = [];
       const rowData = rows[r]!;
@@ -107,11 +119,27 @@ export class TileMap {
         const worldPos = GridCoords.gridToWorld(q, r);
         tile.mesh.position.x = worldPos.x;
         tile.mesh.position.z = worldPos.z;
+
+        if (env.debug) {
+          this.addOutLine(tile.mesh, outlineMaterial);
+        }
+
+
+
         this.group.add(tile.mesh);
       }
 
       this.tiles.push(row);
     }
+  }
+
+  private addOutLine(mesh: THREE.Mesh, outlineMaterial: THREE.MeshToonMaterial):void
+  {
+
+    const outlineMesh = new THREE.Mesh(mesh.geometry, outlineMaterial);
+    // outlineMesh.scale.multiplyScalar(1);
+
+    mesh.add(outlineMesh);
   }
 
   private buildObjects(mapData: MapData): void {

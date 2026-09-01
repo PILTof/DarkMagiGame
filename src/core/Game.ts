@@ -1,5 +1,5 @@
-import { DEFAULT_MAP_PATH } from "../config/gameConfig.ts";
 import { env } from "../config/env.ts";
+import { DEFAULT_MAP_PATH } from "../config/gameConfig.ts";
 import { DevTools } from "../dev/DevTools.ts";
 import { AssetLoader } from "../engine/AssetLoader.ts";
 import { Engine } from "../engine/Engine.ts";
@@ -85,8 +85,7 @@ export class Game {
   }
 
   private initDevTools(): void {
-    const devTools = new DevTools();
-    devTools.initCamera(this.camera);
-    devTools.initLights(this.lights);
+    DevTools.getInstance().initCamera(this.camera);
+    DevTools.getInstance().initLights(this.lights);
   }
 }

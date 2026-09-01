@@ -1,11 +1,12 @@
 import * as THREE from "three";
+import { AMBIENT_LIGHT_INTENCITY, DIRECT_LIGHT_INTENCITY } from "../config/gameConfig";
 
 export class Lights {
   addTo(scene: THREE.Scene): void {
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambient = new THREE.AmbientLight(0xffffff, AMBIENT_LIGHT_INTENCITY);
     scene.add(ambient);
-
-    const directional = new THREE.DirectionalLight(0xffffff, 0.8);
+1
+    const directional = new THREE.DirectionalLight(0xffffff, DIRECT_LIGHT_INTENCITY);
     directional.position.set(5, 10, 5);
     scene.add(directional);
   }

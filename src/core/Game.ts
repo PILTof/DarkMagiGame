@@ -19,13 +19,14 @@ export class Game {
   private readonly eventBus = new EventBus();
   private readonly engine: Engine;
   private readonly systems: System[] = [];
+  private readonly camera: IsometricCamera;
 
   constructor(container: HTMLElement) {
     this.engine = new Engine(container);
 
-    const camera = new IsometricCamera();
-    this.engine.setCamera(camera);
-    new PointerHandler(camera);
+    this.camera = new IsometricCamera();
+    this.engine.setCamera(this.camera);
+    new PointerHandler(this.camera);
 
     new Lights().addTo(this.engine.scene);
 
@@ -43,6 +44,7 @@ export class Game {
     );
 
     void new AssetLoader();
+    void this.initDevTools();
   }
 
   start(): void {
@@ -55,5 +57,10 @@ export class Game {
       this.engine.render();
     };
     loop();
+  }
+
+  private async initDevTools(): Promise<void> {
+    const { initDevTools } = await import("../dev/index.ts");
+    await initDevTools(this.camera);
   }
 }

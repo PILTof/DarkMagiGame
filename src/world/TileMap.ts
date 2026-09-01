@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { env } from "../config/env.ts";
+import { EventBus } from "../core/EventBus.ts";
 import { DevTools } from "../dev/DevTools.ts";
 import { GridCoords, type GridPos } from "./GridCoords.ts";
 import type { MapData, MapSpawn } from "./map/MapData.ts";
@@ -16,12 +17,14 @@ export class TileMap {
   private mapWidth = 0;
   private mapHeight = 0;
   private readonly mapObjects: MapObjects;
+  private readonly eventBus: EventBus;
 
   constructor(scene: THREE.Scene, mapObjects = new MapObjects()) {
     this.scene = scene;
     this.mapObjects = mapObjects;
     this.scene.add(this.group);
     this.scene.add(this.objectsGroup);
+    this.eventBus = EventBus.getInstance();
   }
 
   buildFromMap(mapData: MapData): void {

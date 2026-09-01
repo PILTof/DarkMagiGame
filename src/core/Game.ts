@@ -21,7 +21,7 @@ import { EventBus } from "./EventBus.ts";
 
 export class Game {
   private readonly clock = new Clock();
-  private readonly eventBus = new EventBus();
+  private readonly eventBus = EventBus.getInstance();
   private readonly engine: Engine;
   private readonly camera: IsometricCamera;
   private readonly lights: Lights;

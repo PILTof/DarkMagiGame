@@ -5,11 +5,13 @@ import { Tile } from "./Tile.ts";
 
 export class GrassTile extends Tile {
     private static TEXTURES: Array<string> = [
-        "/assets/images/grass2.png",
-        "/assets/images/grass3.png",
+        // "/assets/images/grass-new.png",
         "/assets/images/grass4.png",
         "/assets/images/grass4.png",
         "/assets/images/grass4.png",
+        "/assets/images/grass5.png",
+        "/assets/images/grass6.png",
+        "/assets/images/grass6.png",
     ];
 
     readonly type = "grass" as const;

@@ -5,11 +5,7 @@ import { Tile } from "./Tile.ts";
 
 export class DirtTile extends Tile {
     private static TEXTURES: Array<string> = [
-        "/assets/images/dirt.png",
-        "/assets/images/dirt2.png",
-        "/assets/images/dirt3.png",
-        "/assets/images/dirt3.png",
-        "/assets/images/dirt3.png",
+        "/assets/images/dirt4.png",
     ];
     readonly type = "stone" as const;
     readonly walkable = true;
@@ -20,7 +16,7 @@ export class DirtTile extends Tile {
         texture.minFilter = NearestFilter;
         texture.magFilter = NearestFilter;
         texture.rotation = MathUtils.degToRad(
-            getRandFromArray([0, 90, 180, 270]),
+            110
         );
         texture.colorSpace = SRGBColorSpace;
         texture.center.set(0.5, 0.5);

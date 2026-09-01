@@ -1,15 +1,7 @@
 import * as THREE from "three";
-import { MAP_HEIGHT, MAP_WIDTH, TILE_SIZE } from "../config/gameConfig.ts";
+import { MAP_HEIGHT, MAP_WIDTH } from "../config/gameConfig.ts";
 import { GridCoords, type GridPos } from "./GridCoords.ts";
-import { Tile, type TileType } from "./Tile.ts";
-
-const TILE_COLORS: Record<TileType, number> = {
-  grass: 0x4a7c59,
-  stone: 0x6b6b6b,
-  water: 0x3d6b8e,
-};
-
-const HEX_HEIGHT = 0.2;
+import { createTile, resolveTileType, type Tile } from "./tiles/index.ts";
 
 export class TileMap {
   readonly group = new THREE.Group();
@@ -22,35 +14,17 @@ export class TileMap {
   }
 
   build(): void {
-    const geometry = new THREE.CylinderGeometry(
-      TILE_SIZE,
-      TILE_SIZE,
-      HEX_HEIGHT,
-      6,
-    );
-
     for (let r = 0; r < MAP_HEIGHT; r++) {
       const row: Tile[] = [];
       for (let q = 0; q < MAP_WIDTH; q++) {
-        const type: TileType =
-          (q + r) % 7 === 0
-            ? "water"
-            : (q + r) % 5 === 0
-              ? "stone"
-              : "grass";
-        const walkable = type !== "water";
-        const tile = new Tile({ q, r }, type, walkable);
+        const type = resolveTileType(q, r);
+        const tile = createTile(type, { q, r });
         row.push(tile);
 
-        const material = new THREE.MeshStandardMaterial({
-          color: TILE_COLORS[type],
-        });
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.rotation.y = Math.PI / 6;
         const worldPos = GridCoords.gridToWorld(q, r);
-        mesh.position.set(worldPos.x, -HEX_HEIGHT / 2, worldPos.z);
-        mesh.userData = { q, r, type: "tile" };
-        this.group.add(mesh);
+        tile.mesh.position.x = worldPos.x;
+        tile.mesh.position.z = worldPos.z;
+        this.group.add(tile.mesh);
       }
       this.tiles.push(row);
     }

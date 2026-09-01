@@ -1,9 +1,11 @@
 // world
+import { env } from "./env.ts";
+
 export const TILE_SIZE = 1;
 export const MAP_WIDTH = 12;
 export const MAP_HEIGHT = 12;
 export const CAMERA_FRUSTUM = 20;
-export const UNIT_SPEED = 4;
+export const UNIT_SPEED = env.unitSpeed;
 export const AMBIENT_LIGHT_INTENCITY = 2;
 export const DIRECT_LIGHT_INTENCITY = 1;
 

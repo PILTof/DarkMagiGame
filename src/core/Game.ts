@@ -1,11 +1,10 @@
-import { Clock } from "./Clock.ts";
-import { EventBus } from "./EventBus.ts";
-import { EntityManager } from "../entities/EntityManager.ts";
-import { createPlayer } from "../entities/Player.ts";
+import { env } from "../config/env.ts";
 import { AssetLoader } from "../engine/AssetLoader.ts";
 import { Engine } from "../engine/Engine.ts";
 import { IsometricCamera } from "../engine/IsometricCamera.ts";
 import { Lights } from "../engine/Lights.ts";
+import { EntityManager } from "../entities/EntityManager.ts";
+import { createPlayer } from "../entities/Player.ts";
 import { PointerHandler } from "../input/PointerHandler.ts";
 import { AnimationSystem } from "../systems/AnimationSystem.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
@@ -14,6 +13,8 @@ import { SelectionSystem } from "../systems/SelectionSystem.ts";
 import type { System } from "../systems/System.ts";
 import { PathfindingService } from "../world/PathfindingService.ts";
 import { TileMap } from "../world/TileMap.ts";
+import { Clock } from "./Clock.ts";
+import { EventBus } from "./EventBus.ts";
 
 export class Game {
   private readonly clock = new Clock();
@@ -51,7 +52,9 @@ export class Game {
     );
 
     void new AssetLoader();
-    void this.initDevTools();
+    if (env.debug) {
+      void this.initDevTools();
+    }
   }
 
   start(): void {

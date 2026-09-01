@@ -68,7 +68,7 @@ export class CameraDevPanel implements DevPanel {
       "reset",
     );
 
-    folder.open();
+    folder.close();
   }
 
   dispose(): void {

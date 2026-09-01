@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { GridCoords, type GridPos } from "./GridCoords.ts";
 import type { MapData, MapSpawn } from "./map/MapData.ts";
-import { createObjectMesh, isBlockingObject } from "./map/MapObjects.ts";
+import { MapObjects } from "./map/MapObjects.ts";
 import { createTile, type Tile } from "./tiles/index.ts";
 
 export class TileMap {
@@ -13,9 +13,11 @@ export class TileMap {
   private mapData: MapData | null = null;
   private mapWidth = 0;
   private mapHeight = 0;
+  private readonly mapObjects: MapObjects;
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Scene, mapObjects = new MapObjects()) {
     this.scene = scene;
+    this.mapObjects = mapObjects;
     this.scene.add(this.group);
     this.scene.add(this.objectsGroup);
   }
@@ -114,14 +116,14 @@ export class TileMap {
 
   private buildObjects(mapData: MapData): void {
     for (const object of mapData.objects) {
-      const mesh = createObjectMesh(object.type);
+      const mesh = this.mapObjects.create(object.type);
       const worldPos = GridCoords.gridToWorld(object.q, object.r);
       mesh.position.set(worldPos.x, 0, worldPos.z);
       mesh.userData.q = object.q;
       mesh.userData.r = object.r;
       this.objectsGroup.add(mesh);
 
-      if (isBlockingObject(object.type)) {
+      if (this.mapObjects.isBlocking(object.type)) {
         this.blockedCells.add(this.cellKey(object.q, object.r));
       }
     }

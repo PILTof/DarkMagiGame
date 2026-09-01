@@ -13,7 +13,7 @@ import { InputSystem } from "../systems/InputSystem.ts";
 import { MovementSystem } from "../systems/MovementSystem.ts";
 import { SelectionSystem } from "../systems/SelectionSystem.ts";
 import type { System } from "../systems/System.ts";
-import { loadMap } from "../world/map/index.ts";
+import { MapLoader } from "../world/map/index.ts";
 import { PathfindingService } from "../world/PathfindingService.ts";
 import { TileMap } from "../world/TileMap.ts";
 import { Clock } from "./Clock.ts";
@@ -27,6 +27,7 @@ export class Game {
   private readonly lights: Lights;
   private tileMap: TileMap | null = null;
   private systems: System[] = [];
+  private readonly mapLoader = new MapLoader();
 
   constructor(container: HTMLElement) {
     this.engine = new Engine(container);
@@ -40,7 +41,7 @@ export class Game {
   }
 
   async load(mapPath: string = DEFAULT_MAP_PATH): Promise<void> {
-    const mapData = await loadMap(mapPath);
+    const mapData = await this.mapLoader.load(mapPath);
 
     this.tileMap = new TileMap(this.engine.scene);
     this.tileMap.buildFromMap(mapData);

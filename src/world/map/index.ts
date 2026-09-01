@@ -5,5 +5,5 @@ export type {
   MapSpawn,
   SpawnType,
 } from "./MapData.ts";
-export { loadMap } from "./MapLoader.ts";
-export { createObjectMesh, isBlockingObject } from "./MapObjects.ts";
+export { MapLoader } from "./MapLoader.ts";
+export { MapObjects } from "./MapObjects.ts";

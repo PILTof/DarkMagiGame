@@ -155,7 +155,20 @@ export class TileMap {
       this.objectsGroup.add(mesh);
 
       if (this.mapObjects.isBlocking(object.type)) {
-        this.blockedCells.add(this.cellKey(object.q, object.r));
+        for (const cell of this.mapObjects.getBlockingCells(
+          object.type,
+          object.q,
+          object.r,
+        )) {
+          if (
+            cell.q >= 0 &&
+            cell.r >= 0 &&
+            cell.q < this.mapWidth &&
+            cell.r < this.mapHeight
+          ) {
+            this.blockedCells.add(this.cellKey(cell.q, cell.r));
+          }
+        }
       }
     }
   }

@@ -1,11 +1,53 @@
 import * as THREE from "three";
+import { TILE_SIZE } from "../../config/gameConfig.ts";
+import { GridCoords, type GridPos } from "../GridCoords.ts";
 import type { MapObjectType } from "./MapData.ts";
 
 export class MapObjects {
   private readonly blockingTypes = new Set<MapObjectType>(["tree", "rock"]);
+  private readonly footprintBoxes = new Map<MapObjectType, THREE.Box3>();
 
   isBlocking(type: MapObjectType): boolean {
     return this.blockingTypes.has(type);
+  }
+
+  /** Гексы, перекрываемые объектом по его визуальному bounding box. */
+  getBlockingCells(type: MapObjectType, anchorQ: number, anchorR: number): GridPos[] {
+    const localBox = this.getFootprintBox(type);
+    const center = GridCoords.gridToWorld(anchorQ, anchorR);
+
+    const minX = center.x + localBox.min.x;
+    const maxX = center.x + localBox.max.x;
+    const minZ = center.z + localBox.min.z;
+    const maxZ = center.z + localBox.max.z;
+
+    const searchRange =
+      Math.ceil(Math.max(maxX - minX, maxZ - minZ) / (TILE_SIZE * 1.5)) + 1;
+
+    const cells: GridPos[] = [];
+    const seen = new Set<string>();
+
+    for (let dq = -searchRange; dq <= searchRange; dq++) {
+      for (let dr = -searchRange; dr <= searchRange; dr++) {
+        const q = anchorQ + dq;
+        const r = anchorR + dr;
+        const pos = GridCoords.gridToWorld(q, r);
+
+        const closestX = Math.max(minX, Math.min(pos.x, maxX));
+        const closestZ = Math.max(minZ, Math.min(pos.z, maxZ));
+        const dist = Math.hypot(pos.x - closestX, pos.z - closestZ);
+
+        if (dist <= TILE_SIZE) {
+          const key = `${q},${r}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            cells.push({ q, r });
+          }
+        }
+      }
+    }
+
+    return cells;
   }
 
   create(type: MapObjectType): THREE.Group {
@@ -47,5 +89,15 @@ export class MapObjects {
     );
     rock.position.y = 0.1;
     group.add(rock);
+  }
+
+  private getFootprintBox(type: MapObjectType): THREE.Box3 {
+    let box = this.footprintBoxes.get(type);
+    if (!box) {
+      const group = this.create(type);
+      box = new THREE.Box3().setFromObject(group);
+      this.footprintBoxes.set(type, box);
+    }
+    return box;
   }
 }

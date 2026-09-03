@@ -16,6 +16,7 @@ import type { System } from "../systems/System.ts";
 import { MapLoader } from "../world/map/index.ts";
 import { PathfindingService } from "../world/PathfindingService.ts";
 import { TileMap } from "../world/TileMap.ts";
+import { TileAssets } from "../world/tiles/TileAssets.ts";
 import { Clock } from "./Clock.ts";
 import { EventBus } from "./EventBus.ts";
 
@@ -43,8 +44,11 @@ export class Game {
   async load(mapPath: string = DEFAULT_MAP_PATH): Promise<void> {
     const mapData = await this.mapLoader.load(mapPath);
 
+    const assetLoader = new AssetLoader();
+    const tileAssets = await TileAssets.preload(assetLoader);
+
     this.tileMap = new TileMap(this.engine.scene);
-    this.tileMap.buildFromMap(mapData);
+    await this.tileMap.buildFromMap(mapData, tileAssets);
 
     const entityManager = new EntityManager();
     const pathfinding = new PathfindingService(this.tileMap);
@@ -60,8 +64,6 @@ export class Game {
       new MovementSystem(entityManager, pathfinding, this.tileMap, this.eventBus),
       new AnimationSystem(entityManager),
     ];
-
-    void new AssetLoader();
 
     if (env.debug) {
       this.initDevTools();

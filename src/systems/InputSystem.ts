@@ -49,14 +49,27 @@ export class InputSystem implements System {
     this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     this.raycaster.setFromCamera(this.pointer, this.camera.camera);
+    // recursive: GLTF tiles are Groups; geometry lives on nested meshes (hex + decorations)
     const hits = this.raycaster.intersectObjects(
       this.tileMap.group.children,
-      false,
+      true,
     );
 
-    const tileHit = hits.find((hit) => hit.object.userData.type === "tile");
-    if (!tileHit) return null;
+    for (const hit of hits) {
+      if (!this.findTileRoot(hit.object)) continue;
+      return new THREE.Vector3(hit.point.x, 0, hit.point.z);
+    }
 
-    return new THREE.Vector3(tileHit.point.x, 0, tileHit.point.z);
+    return null;
+  }
+
+  /** Walk up from a nested mesh to the tile root that carries userData.type === "tile". */
+  private findTileRoot(object: THREE.Object3D): THREE.Object3D | null {
+    let current: THREE.Object3D | null = object;
+    while (current) {
+      if (current.userData.type === "tile") return current;
+      current = current.parent;
+    }
+    return null;
   }
 }

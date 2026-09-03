@@ -6,6 +6,7 @@ import { GridCoords, type GridPos } from "./GridCoords.ts";
 import type { MapData, MapSpawn } from "./map/MapData.ts";
 import { MapObjects } from "./map/MapObjects.ts";
 import { createTile, type Tile } from "./tiles/index.ts";
+import type { TileAssets } from "./tiles/TileAssets.ts";
 
 export class TileMap {
   readonly group = new THREE.Group();
@@ -27,13 +28,13 @@ export class TileMap {
     this.eventBus = EventBus.getInstance();
   }
 
-  buildFromMap(mapData: MapData): void {
+  async buildFromMap(mapData: MapData, tileAssets: TileAssets): Promise<void> {
     this.clear();
     this.mapData = mapData;
     this.mapWidth = mapData.width;
     this.mapHeight = mapData.height;
 
-    this.buildTerrain(mapData);
+    await this.buildTerrain(mapData, tileAssets);
     this.buildObjects(mapData);
     this.centerMap();
   }
@@ -92,18 +93,22 @@ export class TileMap {
     return GridCoords.worldToGrid(local);
   }
 
-  private buildTerrain(mapData: MapData): void {
+  private async buildTerrain(
+    mapData: MapData,
+    tileAssets: TileAssets,
+  ): Promise<void> {
     const { legend, rows } = mapData.terrain;
 
-
     const outlineMaterial = new THREE.MeshToonMaterial({
-      color: 'black',
-      wireframe: true
+      color: "black",
+      wireframe: true,
     });
 
     if (env.debug) {
-      DevTools.getInstance().initWireframe(outlineMaterial)
+      DevTools.getInstance().initWireframe(outlineMaterial);
     }
+
+    const loadTasks: Promise<void>[] = [];
 
     for (let r = 0; r < mapData.height; r++) {
       const row: Tile[] = [];
@@ -120,29 +125,36 @@ export class TileMap {
         row.push(tile);
 
         const worldPos = GridCoords.gridToWorld(q, r);
-        tile.mesh.position.x = worldPos.x;
-        tile.mesh.position.z = worldPos.z;
 
-        if (env.debug) {
-          this.addOutLine(tile.mesh, outlineMaterial);
-        }
+        loadTasks.push(
+          tile.loadMesh(tileAssets).then((root) => {
+            root.position.set(worldPos.x, 0, worldPos.z);
 
+            if (env.debug) {
+              // this.addOutline(root, outlineMaterial);
+            }
 
-
-        this.group.add(tile.mesh);
+            this.group.add(root);
+          }),
+        );
       }
 
       this.tiles.push(row);
     }
+
+    await Promise.all(loadTasks);
   }
 
-  private addOutLine(mesh: THREE.Mesh, outlineMaterial: THREE.MeshToonMaterial):void
-  {
-
-    const outlineMesh = new THREE.Mesh(mesh.geometry, outlineMaterial);
-    // outlineMesh.scale.multiplyScalar(1);
-
-    mesh.add(outlineMesh);
+  private addOutline(
+    root: THREE.Object3D,
+    outlineMaterial: THREE.MeshToonMaterial,
+  ): void {
+    root.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.geometry) {
+        const outlineMesh = new THREE.Mesh(child.geometry, outlineMaterial);
+        child.add(outlineMesh);
+      }
+    });
   }
 
   private buildObjects(mapData: MapData): void {

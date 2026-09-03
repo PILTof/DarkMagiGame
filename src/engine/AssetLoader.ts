@@ -8,12 +8,17 @@ export class AssetLoader {
   async loadModel(url: string): Promise<THREE.Group> {
     const cached = this.cache.get(url);
     if (cached) {
-      return cached.clone();
+      return cached.clone(true);
     }
 
     const gltf = await this.loader.loadAsync(url);
     const model = gltf.scene;
     this.cache.set(url, model);
-    return model.clone();
+    return model.clone(true);
+  }
+
+  cloneCached(url: string): THREE.Group | null {
+    const cached = this.cache.get(url);
+    return cached ? cached.clone(true) : null;
   }
 }

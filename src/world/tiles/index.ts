@@ -21,6 +21,7 @@ export function resolveTileType(q: number, r: number): TileType {
   return "grass";
 }
 
+export { TileAssets } from "./TileAssets.ts";
 export { DirtTile as StoneTile } from "./DirtTile.ts";
 export { GrassTile } from "./GrassTile.ts";
 export { WaterTile } from "./WaterTile.ts";

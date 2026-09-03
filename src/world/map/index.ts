@@ -6,4 +6,10 @@ export type {
   SpawnType,
 } from "./MapData.ts";
 export { MapLoader } from "./MapLoader.ts";
-export { MapObjects } from "./MapObjects.ts";
+export {
+  createMapObject,
+  MapObjectAssets,
+  MapObjectBase,
+  RockObject,
+  TreeObject,
+} from "./objects/index.ts";

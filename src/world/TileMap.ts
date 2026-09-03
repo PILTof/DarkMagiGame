@@ -4,7 +4,10 @@ import { EventBus } from "../core/EventBus.ts";
 import { DevTools } from "../dev/DevTools.ts";
 import { GridCoords, type GridPos } from "./GridCoords.ts";
 import type { MapData, MapSpawn } from "./map/MapData.ts";
-import { MapObjects } from "./map/MapObjects.ts";
+import {
+  createMapObject,
+  type MapObjectAssets,
+} from "./map/objects/index.ts";
 import { createTile, type Tile } from "./tiles/index.ts";
 import type { TileAssets } from "./tiles/TileAssets.ts";
 
@@ -17,25 +20,27 @@ export class TileMap {
   private mapData: MapData | null = null;
   private mapWidth = 0;
   private mapHeight = 0;
-  private readonly mapObjects: MapObjects;
   private readonly eventBus: EventBus;
 
-  constructor(scene: THREE.Scene, mapObjects = new MapObjects()) {
+  constructor(scene: THREE.Scene) {
     this.scene = scene;
-    this.mapObjects = mapObjects;
     this.scene.add(this.group);
     this.scene.add(this.objectsGroup);
     this.eventBus = EventBus.getInstance();
   }
 
-  async buildFromMap(mapData: MapData, tileAssets: TileAssets): Promise<void> {
+  async buildFromMap(
+    mapData: MapData,
+    tileAssets: TileAssets,
+    objectAssets: MapObjectAssets,
+  ): Promise<void> {
     this.clear();
     this.mapData = mapData;
     this.mapWidth = mapData.width;
     this.mapHeight = mapData.height;
 
     await this.buildTerrain(mapData, tileAssets);
-    this.buildObjects(mapData);
+    await this.buildObjects(mapData, objectAssets);
     this.centerMap();
   }
 
@@ -157,32 +162,39 @@ export class TileMap {
     });
   }
 
-  private buildObjects(mapData: MapData): void {
-    for (const object of mapData.objects) {
-      const mesh = this.mapObjects.create(object.type);
-      const worldPos = GridCoords.gridToWorld(object.q, object.r);
-      mesh.position.set(worldPos.x, 0, worldPos.z);
-      mesh.userData.q = object.q;
-      mesh.userData.r = object.r;
-      this.objectsGroup.add(mesh);
+  private async buildObjects(
+    mapData: MapData,
+    objectAssets: MapObjectAssets,
+  ): Promise<void> {
+    const loadTasks: Promise<void>[] = [];
 
-      if (this.mapObjects.isBlocking(object.type)) {
-        for (const cell of this.mapObjects.getBlockingCells(
-          object.type,
-          object.q,
-          object.r,
-        )) {
-          if (
-            cell.q >= 0 &&
-            cell.r >= 0 &&
-            cell.q < this.mapWidth &&
-            cell.r < this.mapHeight
-          ) {
-            this.blockedCells.add(this.cellKey(cell.q, cell.r));
+    for (const object of mapData.objects) {
+      const instance = createMapObject(object.type, {
+        q: object.q,
+        r: object.r,
+      });
+
+      loadTasks.push(
+        instance.loadMesh(objectAssets).then((root) => {
+          const worldPos = GridCoords.gridToWorld(object.q, object.r);
+          root.position.set(worldPos.x, 0, worldPos.z);
+          this.objectsGroup.add(root);
+
+          for (const cell of instance.getBlockingCells()) {
+            if (
+              cell.q >= 0 &&
+              cell.r >= 0 &&
+              cell.q < this.mapWidth &&
+              cell.r < this.mapHeight
+            ) {
+              this.blockedCells.add(this.cellKey(cell.q, cell.r));
+            }
           }
-        }
-      }
+        }),
+      );
     }
+
+    await Promise.all(loadTasks);
   }
 
   private findFallbackSpawn(): GridPos {

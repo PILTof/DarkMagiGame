@@ -14,6 +14,7 @@ import { MovementSystem } from "../systems/MovementSystem.ts";
 import { SelectionSystem } from "../systems/SelectionSystem.ts";
 import type { System } from "../systems/System.ts";
 import { MapLoader } from "../world/map/index.ts";
+import { MapObjectAssets } from "../world/map/objects/index.ts";
 import { PathfindingService } from "../world/PathfindingService.ts";
 import { TileMap } from "../world/TileMap.ts";
 import { TileAssets } from "../world/tiles/TileAssets.ts";
@@ -45,10 +46,13 @@ export class Game {
     const mapData = await this.mapLoader.load(mapPath);
 
     const assetLoader = new AssetLoader();
-    const tileAssets = await TileAssets.preload(assetLoader);
+    const [tileAssets, objectAssets] = await Promise.all([
+      TileAssets.preload(assetLoader),
+      MapObjectAssets.preload(assetLoader),
+    ]);
 
     this.tileMap = new TileMap(this.engine.scene);
-    await this.tileMap.buildFromMap(mapData, tileAssets);
+    await this.tileMap.buildFromMap(mapData, tileAssets, objectAssets);
 
     const entityManager = new EntityManager();
     const pathfinding = new PathfindingService(this.tileMap);

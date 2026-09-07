@@ -1,9 +1,9 @@
 import {
-  MathUtils,
-  NearestFilter,
-  SRGBColorSpace,
-  TextureLoader,
-  type Object3D,
+    MathUtils,
+    NearestFilter,
+    SRGBColorSpace,
+    TextureLoader,
+    type Object3D,
 } from "three";
 import { getRandFromArray } from "../../mathutils/GetRandFromArray.ts";
 import type { TileVisualConfig } from "./Tile.ts";
@@ -26,12 +26,12 @@ export class GrassTile extends Tile {
     protected async createMesh(assets: TileAssets): Promise<Object3D> {
         const model = assets.tryClone(
             getRandFromArray([
-                "grass",
-                "grass2",
-                "grass3",
-                "grass_empty",
-                "grass_empty",
-                "grass_empty",
+                // "grass",
+                // "grass2",
+                // "grass3",
+                // "grass_empty",
+                // "grass_empty",
+                // "grass_empty",
             ]),
         );
         if (model) {

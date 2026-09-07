@@ -14,6 +14,5 @@ function readBoolean(key: keyof ImportMetaEnv, fallback: boolean): boolean {
 }
 
 export const env = {
-  unitSpeed: readNumber("VITE_UNIT_SPEED", 4),
   debug: readBoolean("VITE_DEBUG", import.meta.env.DEV),
 };

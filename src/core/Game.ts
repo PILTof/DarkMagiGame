@@ -5,8 +5,9 @@ import { AssetLoader } from "../engine/AssetLoader.ts";
 import { Engine } from "../engine/Engine.ts";
 import { IsometricCamera } from "../engine/IsometricCamera.ts";
 import { Lights } from "../engine/Lights.ts";
+import { EntityAssets } from "../entities/EntityAssets.ts";
 import { EntityManager } from "../entities/EntityManager.ts";
-import { createPlayer } from "../entities/Player.ts";
+import { Player } from "../entities/Player.ts";
 import { PointerHandler } from "../input/PointerHandler.ts";
 import { AnimationSystem } from "../systems/AnimationSystem.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
@@ -46,9 +47,10 @@ export class Game {
     const mapData = await this.mapLoader.load(mapPath);
 
     const assetLoader = new AssetLoader();
-    const [tileAssets, objectAssets] = await Promise.all([
+    const [tileAssets, objectAssets, entityAssets] = await Promise.all([
       TileAssets.preload(assetLoader),
       MapObjectAssets.preload(assetLoader),
+      EntityAssets.preload(assetLoader),
     ]);
 
     this.tileMap = new TileMap(this.engine.scene);
@@ -58,7 +60,7 @@ export class Game {
     const pathfinding = new PathfindingService(this.tileMap);
 
     const spawn = this.tileMap.getPlayerSpawn();
-    const player = createPlayer(spawn);
+    const player = new Player(spawn, entityAssets);
     entityManager.add(player, this.engine.scene);
     player.mesh.position.copy(this.tileMap.gridToWorldPosition(spawn.q, spawn.r));
 

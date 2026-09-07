@@ -86,11 +86,11 @@ export class Game {
 
 
     this.systems = [
-      new InputSystem(this.engine, this.camera, this.tileMap, this.eventBus),
+      new InputSystem(this.engine, this.camera, this.tileMap, entityManager, this.eventBus),
       new SelectionSystem(this.eventBus),
       new MovementSystem(entityManager, pathfinding, this.tileMap, this.eventBus),
       new AnimationSystem(entityManager),
-      new BoundsSystem(entityManager, this.tileMap)
+      new BoundsSystem(entityManager, this.tileMap, this.eventBus)
     ];
 
     if (env.debug) {

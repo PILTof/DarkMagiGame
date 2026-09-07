@@ -3,7 +3,6 @@ import { TILE_SIZE } from "../../config/gameConfig.ts";
 import type { GridPos } from "../GridCoords.ts";
 import type { TileAssets } from "./TileAssets.ts";
 
-export type TileType = "grass" | "stone" | "water";
 
 export type TileVisualConfig = {
   color?: number;
@@ -25,11 +24,21 @@ export abstract class Tile {
     this.pos = pos;
   }
 
-  abstract readonly type: TileType;
+  abstract readonly type: string;
   abstract readonly walkable: boolean;
 
-  loadMesh(assets: TileAssets): Promise<THREE.Object3D> {
+  loadMesh(assets?: TileAssets): Promise<THREE.Object3D> {
     if (this.root) return Promise.resolve(this.root);
+    
+    if (!assets)  {
+      const root = this.buildProceduralMesh(); 
+      this.applyMeshDefaults(root);
+      this.root = root;
+
+      return new Promise((resolve) => {
+        resolve(root);
+      });
+    }
 
     this.loadPromise ??= this.createMesh(assets).then((root) => {
       this.applyMeshDefaults(root);

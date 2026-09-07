@@ -2,8 +2,7 @@ export type {
   MapData,
   MapObject,
   MapObjectType,
-  MapSpawn,
-  SpawnType,
+  MapSpawn
 } from "./MapData.ts";
 export { MapLoader } from "./MapLoader.ts";
 export {
@@ -11,5 +10,6 @@ export {
   MapObjectAssets,
   MapObjectBase,
   RockObject,
-  TreeObject,
+  TreeObject
 } from "./objects/index.ts";
+

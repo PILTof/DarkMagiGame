@@ -29,8 +29,6 @@ export class Player extends Unit {
           }
         });
 
-        console.log(model);
-        
         model.userData = { type: "player", entityId: PLAYER_ID };
         return model;
       }

@@ -39,6 +39,7 @@
     { "type": "tree", "q": 9, "r": 9 }
   ],
   "spawns": [
-    { "type": "player", "q": 6, "r": 6 }
+    { "type": "player", "q": 6, "r": 6 },
+    { "type": "enemy", "q": 6, "r" : 10, "name": "Barbara" }
   ]
 }

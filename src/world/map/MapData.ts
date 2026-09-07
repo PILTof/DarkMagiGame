@@ -2,8 +2,6 @@ import type { TileType } from "../tiles/Tile.ts";
 
 export type MapObjectType = "tree" | "rock";
 
-export type SpawnType = "player" | "enemy";
-
 export type MapObject = {
   type: MapObjectType;
   q: number;
@@ -11,9 +9,10 @@ export type MapObject = {
 };
 
 export type MapSpawn = {
-  type: SpawnType;
+  type: string;
   q: number;
   r: number;
+  name: string;
 };
 
 export type MapData = {

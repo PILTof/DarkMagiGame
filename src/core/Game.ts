@@ -5,11 +5,13 @@ import { AssetLoader } from "../engine/AssetLoader.ts";
 import { Engine } from "../engine/Engine.ts";
 import { IsometricCamera } from "../engine/IsometricCamera.ts";
 import { Lights } from "../engine/Lights.ts";
+import { Enemy } from "../entities/Enemy.ts";
 import { EntityAssets } from "../entities/EntityAssets.ts";
 import { EntityManager } from "../entities/EntityManager.ts";
 import { Player } from "../entities/Player.ts";
 import { PointerHandler } from "../input/PointerHandler.ts";
 import { AnimationSystem } from "../systems/AnimationSystem.ts";
+import { BoundsSystem } from "../systems/BoundsSystem.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
 import { MovementSystem } from "../systems/MovementSystem.ts";
 import { SelectionSystem } from "../systems/SelectionSystem.ts";
@@ -71,11 +73,24 @@ export class Game {
     // Настройка камеры для следования за игроком
     this.camera.setFollowTarget(player);
 
+    const entitySpawns = this.tileMap.getSpawns('enemy');
+    
+    for (let i = 0; i < entitySpawns.length; i++) {
+        const spawn = entitySpawns[i];
+        const spawnPos = this.tileMap.gridToWorldPosition(spawn.q, spawn.r);
+        const enemy = new Enemy(spawn.name, {q: spawn.q, r: spawn.r}, entityAssets);
+        enemy.position.copy(spawnPos);
+        enemy.mesh.position.copy(spawnPos);
+        entityManager.add(enemy, this.engine.scene);
+    }
+
+
     this.systems = [
       new InputSystem(this.engine, this.camera, this.tileMap, this.eventBus),
       new SelectionSystem(this.eventBus),
       new MovementSystem(entityManager, pathfinding, this.tileMap, this.eventBus),
       new AnimationSystem(entityManager),
+      new BoundsSystem(entityManager, this.tileMap)
     ];
 
     if (env.debug) {

@@ -62,7 +62,11 @@ export class Game {
     const spawn = this.tileMap.getPlayerSpawn();
     const player = new Player(spawn, entityAssets);
     entityManager.add(player, this.engine.scene);
-    player.mesh.position.copy(this.tileMap.gridToWorldPosition(spawn.q, spawn.r));
+    
+    // Устанавливаем начальную позицию сущности
+    const spawnPos = this.tileMap.gridToWorldPosition(spawn.q, spawn.r);
+    player.position.copy(spawnPos);
+    player.syncMeshPosition();
 
     // Настройка камеры для следования за игроком
     this.camera.setFollowTarget(player);

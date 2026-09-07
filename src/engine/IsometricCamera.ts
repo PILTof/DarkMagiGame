@@ -125,7 +125,7 @@ export class IsometricCamera {
     this.followTarget = entity;
     if (entity) {
       // Устанавливаем начальную позицию камеры относительно персонажа
-      const playerPos = entity.mesh.position;
+      const playerPos = entity.position; // Используем position сущности
       const newTargetX = playerPos.x + CAMERA_OFFSET_X;
       const newTargetY = playerPos.y + CAMERA_OFFSET_Y;
       const newTargetZ = playerPos.z + CAMERA_OFFSET_Z;
@@ -161,7 +161,7 @@ export class IsometricCamera {
     if (!this.followTarget) return;
 
     // Вычисляем смещение цели с момента последнего обновления
-    const currentTargetPos = this.followTarget.mesh.position;
+    const currentTargetPos = this.followTarget.position; // Используем position сущности
     const delta = new THREE.Vector3(
       currentTargetPos.x - this.lastTargetPosition.x,
       currentTargetPos.y - this.lastTargetPosition.y,

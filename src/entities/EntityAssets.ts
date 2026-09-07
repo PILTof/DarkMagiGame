@@ -4,7 +4,7 @@ import type { AssetLoader } from "../engine/AssetLoader.ts";
 export type EntityType = "player" | "enemy";
 
 const ENTITY_MODEL_PATHS: Partial<Record<EntityType, string>> = {
-  player: "/assets/models/player.glb",
+  player: "/assets/models/player.gltf",
   // enemy: "/assets/models/enemy.gltf", // Можно добавить позже
 };
 

@@ -33,7 +33,7 @@ export class MovementSystem implements System {
     if (!player?.hasPath()) return;
 
     const target = player.worldPath[0]!;
-    const position = player.mesh.position;
+    const position = player.position; // Используем position сущности, не mesh
     const direction = new THREE.Vector3(
       target.x - position.x,
       0,
@@ -43,7 +43,9 @@ export class MovementSystem implements System {
     const step = player.speed * dt;
 
     if (distance <= step) {
+      // Достигли waypoint
       position.set(target.x, position.y, target.z);
+      player.syncMeshPosition(); // Синхронизируем mesh
       player.worldPath.shift();
       if (!player.hasPath()) {
         player.gridPos = this.tileMap.worldToGrid(position);
@@ -51,8 +53,10 @@ export class MovementSystem implements System {
       return;
     }
 
+    // Перемещаем сущность
     direction.normalize().multiplyScalar(step);
     position.add(direction);
+    player.syncMeshPosition(); // Синхронизируем mesh каждый кадр
   }
 
   private onPlayerMoveTo(payload: unknown): void {
@@ -60,9 +64,9 @@ export class MovementSystem implements System {
     const player = this.entityManager.getPlayer();
     if (!player) return;
 
-    const moveY = player.mesh.position.y;
+    const moveY = player.position.y; // Используем position сущности
     const targetWorld = new THREE.Vector3(x, moveY, z);
-    const startPos = player.mesh.position.clone();
+    const startPos = player.position.clone(); // Используем position сущности
     const startGrid = this.tileMap.worldToGrid(startPos);
     const targetGrid = this.tileMap.worldToGrid(new THREE.Vector3(x, 0, z));
     const targetWalkable = this.tileMap.isWalkable(targetGrid.q, targetGrid.r);

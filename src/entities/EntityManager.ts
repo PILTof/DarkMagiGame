@@ -1,6 +1,6 @@
 import type * as THREE from "three";
-import { PLAYER_ID } from "./Player.ts";
 import type { Entity } from "./Entity.ts";
+import { PLAYER_ID } from "./Player.ts";
 import { Unit } from "./Unit.ts";
 
 export class EntityManager {

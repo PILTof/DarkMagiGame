@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { env } from "../config/env.ts";
 import { EventBus } from "../core/EventBus.ts";
-import { DevTools } from "../dev/DevTools.ts";
 import { GridCoords, type GridPos } from "./GridCoords.ts";
 import type { MapData, MapSpawn } from "./map/MapData.ts";
 import {
@@ -108,10 +107,6 @@ export class TileMap {
       color: "black",
       wireframe: true,
     });
-
-    if (env.debug) {
-      DevTools.getInstance().initWireframe(outlineMaterial);
-    }
 
     const loadTasks: Promise<void>[] = [];
 

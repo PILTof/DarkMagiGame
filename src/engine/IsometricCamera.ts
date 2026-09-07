@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { CAMERA_FRUSTUM, DEFAULT_AZIMUTH, DEFAULT_DISTANCE, DEFAULT_ELEVATION } from "../config/gameConfig.ts";
+import { CAMERA_FRUSTUM, CAMERA_OFFSET_X, CAMERA_OFFSET_Y, CAMERA_OFFSET_Z, CAMERA_SMOOTH, DEFAULT_AZIMUTH, DEFAULT_DISTANCE, DEFAULT_ELEVATION } from "../config/gameConfig.ts";
+import type { Entity } from "../entities/Entity.ts";
 
 export type CameraState = {
   azimuth: number;
@@ -18,6 +19,11 @@ export class IsometricCamera {
   readonly camera: THREE.OrthographicCamera;
   readonly target = new THREE.Vector3(0, 0, 0);
   private frustumSize = CAMERA_FRUSTUM;
+  
+  // Статический параметр: за кем следит камера
+  private followTarget: Entity | null = null;
+  // Последняя известная позиция цели для расчета смещения
+  private lastTargetPosition = new THREE.Vector3();
 
   constructor() {
     const aspect = window.innerWidth / window.innerHeight;
@@ -110,4 +116,70 @@ export class IsometricCamera {
     this.camera.bottom = this.frustumSize / -2;
     this.camera.updateProjectionMatrix();
   }
+
+  /**
+   * Устанавливает объект, за которым будет следовать камера
+   * @param entity - Сущность для отслеживания (например, игрок)
+   */
+  setFollowTarget(entity: Entity | null): void {
+    this.followTarget = entity;
+    if (entity) {
+      // Устанавливаем начальную позицию камеры относительно персонажа
+      const playerPos = entity.mesh.position;
+      const newTargetX = playerPos.x + CAMERA_OFFSET_X;
+      const newTargetY = playerPos.y + CAMERA_OFFSET_Y;
+      const newTargetZ = playerPos.z + CAMERA_OFFSET_Z;
+      
+      // Вычисляем смещение от текущей позиции target к новой
+      const deltaX = newTargetX - this.target.x;
+      const deltaY = newTargetY - this.target.y;
+      const deltaZ = newTargetZ - this.target.z;
+      
+      // Сдвигаем target и камеру на это смещение
+      this.target.set(newTargetX, newTargetY, newTargetZ);
+      this.camera.position.x += deltaX;
+      this.camera.position.y += deltaY;
+      this.camera.position.z += deltaZ;
+      this.camera.lookAt(this.target);
+      
+      // Запоминаем начальную позицию цели
+      this.lastTargetPosition.copy(playerPos);
+    }
+  }
+
+  /**
+   * Возвращает текущий объект слежения
+   */
+  getFollowTarget(): Entity | null {
+    return this.followTarget;
+  }
+
+  /**
+   * Обновляет позицию камеры для следования за объектом
+   */
+  update(): void {
+    if (!this.followTarget) return;
+
+    // Вычисляем смещение цели с момента последнего обновления
+    const currentTargetPos = this.followTarget.mesh.position;
+    const delta = new THREE.Vector3(
+      currentTargetPos.x - this.lastTargetPosition.x,
+      currentTargetPos.y - this.lastTargetPosition.y,
+      currentTargetPos.z - this.lastTargetPosition.z
+    );
+
+    // Применяем плавность к движению (lerp для плавного следования)
+    const smoothing = CAMERA_SMOOTH;
+    const smoothedDelta = delta.multiplyScalar(smoothing);
+
+    // Сдвигаем и target, и позицию камеры на одинаковое смещение
+    // Это сохраняет относительную позицию камеры
+    this.target.add(smoothedDelta);
+    this.camera.position.add(smoothedDelta);
+    this.camera.lookAt(this.target);
+
+    // Обновляем последнюю позицию с учетом примененного смещения
+    this.lastTargetPosition.add(smoothedDelta);
+  }
+
 }

@@ -14,3 +14,9 @@ export const DIRECT_LIGHT_INTENCITY = 1.5;
 export const DEFAULT_AZIMUTH = 270;
 export const DEFAULT_ELEVATION = 50.5;
 export const DEFAULT_DISTANCE = Math.sqrt(300);
+export const CAMERA_SMOOTH = 0.02;
+
+// camera offset relative to player (initial position)
+export const CAMERA_OFFSET_X = 0;
+export const CAMERA_OFFSET_Y = 0;
+export const CAMERA_OFFSET_Z = 0;

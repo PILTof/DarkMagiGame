@@ -62,6 +62,9 @@ export class Game {
     entityManager.add(player, this.engine.scene);
     player.mesh.position.copy(this.tileMap.gridToWorldPosition(spawn.q, spawn.r));
 
+    // Настройка камеры для следования за игроком
+    this.camera.setFollowTarget(player);
+
     this.systems = [
       new InputSystem(this.engine, this.camera, this.tileMap, this.eventBus),
       new SelectionSystem(this.eventBus),
@@ -82,6 +85,10 @@ export class Game {
     const loop = (): void => {
       requestAnimationFrame(loop);
       const dt = this.clock.getDelta();
+      
+      // Обновление камеры для следования за целью
+      this.camera.update();
+      
       for (const system of this.systems) {
         system.update(dt);
       }

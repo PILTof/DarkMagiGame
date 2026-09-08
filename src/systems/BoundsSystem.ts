@@ -5,7 +5,7 @@ import type { Engine } from "../engine/Engine";
 import type { IsometricCamera } from "../engine/IsometricCamera";
 import type { Entity } from "../entities/Entity";
 import type { EntityManager } from "../entities/EntityManager";
-import { GridCoords } from "../world/GridCoords";
+import { GridCoords, type GridPos } from "../world/GridCoords";
 import type { TileMap } from "../world/TileMap";
 import { UnitBoundsTile } from "../world/tiles/UnitBoundsTile";
 import type { System } from "./System";
@@ -40,11 +40,12 @@ export class BoundsSystem implements System {
         });
     }
 
-    private checkHit(payload: {event: PointerEvent}) {
+    private checkHit(payload: { event: PointerEvent }) {
         // Сначала проверяем клик на баунд врага
         const boundHit = this.pickEnemyBound(payload.event);
         if (boundHit) {
-            this.eventBus.emit('player:move-stop', {});
+            console.log(boundHit);
+            this.eventBus.emit("player:move-stop", {});
         }
     }
 
@@ -52,7 +53,14 @@ export class BoundsSystem implements System {
      * Проверяет, попал ли клик на баунд врага
      * @returns объект с entityId если попали на баунд врага, иначе null
      */
-    private pickEnemyBound(event: PointerEvent): { entityId: string } | null {
+    private pickEnemyBound(
+        event: PointerEvent,
+    ): {
+        entityId: string;
+        gridPos: GridPos;
+        position: THREE.Vector3Like;
+        mesh: Object3D;
+    } | null {
         const rect = this.engine.renderer.domElement.getBoundingClientRect();
         this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -73,7 +81,14 @@ export class BoundsSystem implements System {
                 // Ищем баунд в иерархии
                 const bound = this.findBound(hit.object);
                 if (bound && bound.userData.isBound) {
-                    return { entityId: bound.userData.entityId };
+                    const gridPos = this.tileMap.worldToGrid(bound.position);
+
+                    return {
+                        entityId: bound.userData.entityId,
+                        gridPos: gridPos,
+                        position: bound.position,
+                        mesh: bound,
+                    };
                 }
             }
         }

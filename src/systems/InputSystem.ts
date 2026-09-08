@@ -6,7 +6,7 @@ import type { EntityManager } from "../entities/EntityManager.ts";
 import type { TileMap } from "../world/TileMap.ts";
 import type { System } from "./System.ts";
 
-export type PlayerMovePayload = { x: number; z: number };
+export type PlayerMovePayload = { x: number; z: number, event: Event };
 
 export class InputSystem implements System {
   private readonly engine: Engine;
@@ -40,19 +40,12 @@ export class InputSystem implements System {
   private onPointerDown(event: PointerEvent): void {
     if (event.button !== 2) return;
 
-    // Сначала проверяем клик на баунд врага
-    const boundHit = this.pickEnemyBound(event);
-    if (boundHit) {
-      console.log(`🎯 Clicked on enemy bound! Entity ID: ${boundHit.entityId}`);
-      this.eventBus.emit("enemy:bound-clicked", { entityId: boundHit.entityId });
-      return;
-    }
 
-    // Если не попали на баунд, то обрабатываем движение
+    
     const target = this.pickWorldPosition(event);
     if (!target) return;
 
-    const payload: PlayerMovePayload = { x: target.x, z: target.z };
+    const payload: PlayerMovePayload = { x: target.x, z: target.z, event: event };
     this.eventBus.emit("player:move-to", payload);
   }
 
@@ -86,48 +79,6 @@ export class InputSystem implements System {
     return null;
   }
 
-  /**
-   * Проверяет, попал ли клик на баунд врага
-   * @returns объект с entityId если попали на баунд врага, иначе null
-   */
-  private pickEnemyBound(event: PointerEvent): { entityId: string } | null {
-    const rect = this.engine.renderer.domElement.getBoundingClientRect();
-    this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    this.raycaster.setFromCamera(this.pointer, this.camera.camera);
-    
-    // Получаем все сущности и проверяем их баунды
-    const entities = this.entityManager.getAll();
-    
-    for (const entity of entities) {
-      // Пропускаем игрока
-      if (entity.id === "player") continue;
-      
-      // Проверяем пересечение с mesh сущности (включая все дочерние объекты)
-      const hits = this.raycaster.intersectObject(entity.mesh, true);
-      
-      for (const hit of hits) {
-        // Ищем баунд в иерархии
-        const bound = this.findBound(hit.object);
-        if (bound && bound.userData.isBound) {
-          return { entityId: bound.userData.entityId };
-        }
-      }
-    }
-    
-    return null;
-  }
 
-  /**
-   * Ищет объект с userData.isBound === true в иерархии
-   */
-  private findBound(object: THREE.Object3D): THREE.Object3D | null {
-    let current: THREE.Object3D | null = object;
-    while (current) {
-      if (current.userData.isBound === true) return current;
-      current = current.parent;
-    }
-    return null;
-  }
 }

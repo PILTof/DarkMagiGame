@@ -90,7 +90,7 @@ export class Game {
       new SelectionSystem(this.eventBus),
       new MovementSystem(entityManager, pathfinding, this.tileMap, this.eventBus),
       new AnimationSystem(entityManager),
-      new BoundsSystem(entityManager, this.tileMap, this.eventBus)
+      new BoundsSystem(entityManager, this.tileMap, this.eventBus, this.engine, this.camera)
     ];
 
     if (env.debug) {

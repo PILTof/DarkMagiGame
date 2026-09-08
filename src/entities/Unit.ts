@@ -17,6 +17,7 @@ export class Unit extends Entity {
 
   clearPath(): void {
     this.worldPath = [];
+    this.worldPath.length = 0; // Очищаем массив, сохраняя ссылку
   }
 
   hasPath(): boolean {

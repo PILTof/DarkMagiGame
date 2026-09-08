@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { EventBus } from "../core/EventBus.ts";
 import type { EntityManager } from "../entities/EntityManager.ts";
+import type { Player } from "../entities/Player.ts";
 import type { GridPos } from "../world/GridCoords.ts";
 import type { PathfindingService } from "../world/PathfindingService.ts";
 import type { TileMap } from "../world/TileMap.ts";
@@ -8,113 +9,125 @@ import type { PlayerMovePayload } from "./InputSystem.ts";
 import type { System } from "./System.ts";
 
 export class MovementSystem implements System {
-  private readonly entityManager: EntityManager;
-  private readonly pathfinding: PathfindingService;
-  private readonly tileMap: TileMap;
-  private readonly eventBus: EventBus;
+    private readonly entityManager: EntityManager;
+    private readonly pathfinding: PathfindingService;
+    private readonly tileMap: TileMap;
+    private readonly eventBus: EventBus;
+    private readonly player: Player | undefined;
 
-  constructor(
-    entityManager: EntityManager,
-    pathfinding: PathfindingService,
-    tileMap: TileMap,
-    eventBus: EventBus,
-  ) {
-    this.entityManager = entityManager;
-    this.pathfinding = pathfinding;
-    this.tileMap = tileMap;
-    this.eventBus = eventBus;
-    this.eventBus.on("player:move-to", (payload) => {
-      this.onPlayerMoveTo(payload);
-    });
-  }
-
-  update(dt: number): void {
-    const player = this.entityManager.getPlayer();
-    if (!player?.hasPath()) return;
-
-    const target = player.worldPath[0]!;
-    const position = player.position; // Используем position сущности, не mesh
-    const direction = new THREE.Vector3(
-      target.x - position.x,
-      0,
-      target.z - position.z,
-    );
-    const distance = direction.length();
-    const step = player.speed * dt;
-
-    if (distance <= step) {
-      // Достигли waypoint
-      position.set(target.x, position.y, target.z);
-      player.syncMeshPosition(); // Синхронизируем mesh
-      player.worldPath.shift();
-      if (!player.hasPath()) {
-        player.gridPos = this.tileMap.worldToGrid(position);
-      }
-      return;
-    }
-
-    // Перемещаем сущность
-    direction.normalize().multiplyScalar(step);
-    position.add(direction);
-    player.syncMeshPosition(); // Синхронизируем mesh каждый кадр
-  }
-
-  private onPlayerMoveTo(payload: unknown): void {
-    const { x, z } = payload as PlayerMovePayload;
-    const player = this.entityManager.getPlayer();
-    if (!player) return;
-
-    const moveY = player.position.y; // Используем position сущности
-    const targetWorld = new THREE.Vector3(x, moveY, z);
-    const startPos = player.position.clone(); // Используем position сущности
-    const startGrid = this.tileMap.worldToGrid(startPos);
-    const targetGrid = this.tileMap.worldToGrid(new THREE.Vector3(x, 0, z));
-    const targetWalkable = this.tileMap.isWalkable(targetGrid.q, targetGrid.r);
-
-    if (
-      targetWalkable &&
-      this.pathfinding.canWalkDirect(startPos, targetWorld)
+    constructor(
+        entityManager: EntityManager,
+        pathfinding: PathfindingService,
+        tileMap: TileMap,
+        eventBus: EventBus,
     ) {
-      player.setWorldPath([targetWorld.clone()]);
-      return;
+        this.entityManager = entityManager;
+        this.pathfinding = pathfinding;
+        this.tileMap = tileMap;
+        this.eventBus = eventBus;
+        this.player = entityManager.getPlayer();
+        this.eventBus.on("player:move-stop", (e) => this.onPlayerStopped(e));
+        this.eventBus.on("player:move-to", (payload) => {
+            this.onPlayerMoveTo(payload);
+        });
+
     }
 
-    const result = this.pathfinding.findPathToward(startGrid, targetGrid);
+    update(dt: number): void {
+        const player = this.entityManager.getPlayer();
+        if (!player?.hasPath()) return;
 
-    if (result.path.length === 0) {
-      if (result.reachesGoal && targetWalkable) {
-        player.setWorldPath([targetWorld.clone()]);
-      }
-      return;
+        const target = player.worldPath[0]!;
+        const position = player.position; // Используем position сущности, не mesh
+        const direction = new THREE.Vector3(
+            target.x - position.x,
+            0,
+            target.z - position.z,
+        );
+        const distance = direction.length();
+        const step = player.speed * dt;
+
+        if (distance <= step) {
+            // Достигли waypoint
+            position.set(target.x, position.y, target.z);
+            player.syncMeshPosition(); // Синхронизируем mesh
+            player.worldPath.shift();
+            if (!player.hasPath()) {
+                player.gridPos = this.tileMap.worldToGrid(position);
+            }
+            return;
+        }
+
+        // Перемещаем сущность
+        direction.normalize().multiplyScalar(step);
+        position.add(direction);
+        player.syncMeshPosition(); // Синхронизируем mesh каждый кадр
     }
 
-    const finalTarget = result.reachesGoal
-      ? targetWorld.clone()
-      : this.tileMap.gridToWorldPosition(
-          result.path[result.path.length - 1]!.q,
-          result.path[result.path.length - 1]!.r,
-          moveY,
+    private onPlayerMoveTo(payload: unknown): void {
+        const { x, z } = payload as PlayerMovePayload;
+        const player = this.entityManager.getPlayer();
+        if (!player) return;
+
+        const moveY = player.position.y; // Используем position сущности
+        const targetWorld = new THREE.Vector3(x, moveY, z);
+        const startPos = player.position.clone(); // Используем position сущности
+        const startGrid = this.tileMap.worldToGrid(startPos);
+        const targetGrid = this.tileMap.worldToGrid(new THREE.Vector3(x, 0, z));
+        const targetWalkable = this.tileMap.isWalkable(
+            targetGrid.q,
+            targetGrid.r,
         );
 
-    const gridSteps = result.reachesGoal
-      ? result.path
-      : result.path.slice(0, -1);
+        if (
+            targetWalkable &&
+            this.pathfinding.canWalkDirect(startPos, targetWorld)
+        ) {
+            player.setWorldPath([targetWorld.clone()]);
+            return;
+        }
 
-    player.setWorldPath(this.buildWorldPath(gridSteps, finalTarget, moveY));
-  }
+        const result = this.pathfinding.findPathToward(startGrid, targetGrid);
 
-  private buildWorldPath(
-    gridPath: GridPos[],
-    target: THREE.Vector3,
-    y: number,
-  ): THREE.Vector3[] {
-    const worldPath: THREE.Vector3[] = [];
+        if (result.path.length === 0) {
+            if (result.reachesGoal && targetWalkable) {
+                player.setWorldPath([targetWorld.clone()]);
+            }
+            return;
+        }
 
-    for (const pos of gridPath) {
-      worldPath.push(this.tileMap.gridToWorldPosition(pos.q, pos.r, y));
+        const finalTarget = result.reachesGoal
+            ? targetWorld.clone()
+            : this.tileMap.gridToWorldPosition(
+                  result.path[result.path.length - 1]!.q,
+                  result.path[result.path.length - 1]!.r,
+                  moveY,
+              );
+
+        const gridSteps = result.reachesGoal
+            ? result.path
+            : result.path.slice(0, -1);
+
+        player.setWorldPath(this.buildWorldPath(gridSteps, finalTarget, moveY));
     }
 
-    worldPath.push(target.clone());
-    return worldPath;
-  }
+    private buildWorldPath(
+        gridPath: GridPos[],
+        target: THREE.Vector3,
+        y: number,
+    ): THREE.Vector3[] {
+        const worldPath: THREE.Vector3[] = [];
+
+        for (const pos of gridPath) {
+            worldPath.push(this.tileMap.gridToWorldPosition(pos.q, pos.r, y));
+        }
+
+        worldPath.push(target.clone());
+        return worldPath;
+    }
+
+    /** Останавливает движение игрока */
+    private onPlayerStopped(event: unknown): void {
+      this.player?.clearPath();
+    }
 }

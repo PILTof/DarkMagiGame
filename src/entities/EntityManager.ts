@@ -1,7 +1,6 @@
 import type * as THREE from "three";
 import type { Entity } from "./Entity.ts";
-import { PLAYER_ID } from "./Player.ts";
-import { Unit } from "./Unit.ts";
+import { Player, PLAYER_ID } from "./Player.ts";
 
 export class EntityManager {
   private readonly entities = new Map<string, Entity>();
@@ -22,9 +21,9 @@ export class EntityManager {
     return this.entities.get(id);
   }
 
-  getPlayer(): Unit | undefined {
+  getPlayer(): Player | undefined {
     const entity = this.entities.get(PLAYER_ID);
-    return entity instanceof Unit ? entity : undefined;
+    return entity instanceof Player ? entity : undefined;
   }
 
   getAll(): Entity[] {

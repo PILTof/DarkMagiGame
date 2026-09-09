@@ -11,9 +11,9 @@ import { UnitBoundsTile } from "../world/tiles/UnitBoundsTile";
 import type { System } from "./System";
 
 export type BoundModifiers = {
-    health_points?: number,
-    mana_pool?: number,
-    stamina?: number
+    health_points?: number;
+    mana_pool?: number;
+    stamina?: number;
 };
 
 export class BoundsSystem implements System {
@@ -25,6 +25,13 @@ export class BoundsSystem implements System {
     private readonly pointer = new THREE.Vector2();
     private readonly engine: Engine;
     private readonly camera: IsometricCamera;
+    public action: {
+        payload: any;
+        run: boolean;
+    } = {
+        payload: undefined,
+        run: false,
+    };
 
     constructor(
         entityManager: EntityManager,
@@ -39,19 +46,50 @@ export class BoundsSystem implements System {
         this.engine = engine;
         this.camera = camera;
 
-        this.eventBus.on("player:move-to", (payload) => this.checkHit(payload));
+        this.eventBus.on("player:move-to", (payload) => {
+            this.action.payload = payload;
+            this.action.run = true;
+            this.checkHit(payload);
+        });
 
         this.entityManager.getAll().forEach((entity) => {
             this.drawBounds(entity);
         });
     }
 
-    private checkHit(payload: { event: PointerEvent }) {
+    private checkHit(payload: any) {
         // Сначала проверяем клик на баунд врага
         const boundHit = this.pickEnemyBound(payload.event);
         if (boundHit) {
-            console.log(boundHit);
-            this.eventBus.emit("player:move-stop", {});
+            console.log('Bound hit detected:', {
+                entityId: boundHit.entityId,
+                gridDistance: boundHit.gridDistance,
+                distance: boundHit.distance
+            });
+
+            // Если не удалось вычислить расстояние (например, нет игрока), останавливаем
+            if (boundHit.gridDistance === undefined) {
+                console.log('Grid distance undefined, stopping movement');
+                this.eventBus.emit("player:move-stop", {});
+                this.action.run = false;
+                return;
+            }
+
+            // Если расстояние <= 2 гекса, останавливаем игрока (он достаточно близко для атаки)
+            if (boundHit.gridDistance <= 2) {
+                console.log(`Grid distance ${boundHit.gridDistance} <= 2, stopping movement`);
+                this.eventBus.emit("player:move-stop", {});
+                this.action.run = false;
+            } else {
+                console.log(`Grid distance ${boundHit.gridDistance} > 2, continuing movement`);
+                // Игрок продолжает двигаться к цели
+            }
+        }
+    }
+
+    update(dt: number): void {
+        if (this.action.run) {
+            this.checkHit(this.action.payload);
         }
     }
 
@@ -64,7 +102,9 @@ export class BoundsSystem implements System {
         gridPos: GridPos;
         position: THREE.Vector3Like;
         mesh: Object3D;
-        modifiers: BoundModifiers
+        modifiers: BoundModifiers;
+        distance: number | undefined;
+        gridDistance: number | undefined;
     } | null {
         const rect = this.engine.renderer.domElement.getBoundingClientRect();
         this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -74,6 +114,7 @@ export class BoundsSystem implements System {
 
         // Получаем все сущности и проверяем их баунды
         const entities = this.entityManager.getAll();
+        const player = this.entityManager.getPlayer();
 
         for (const entity of entities) {
             // Пропускаем игрока
@@ -86,16 +127,37 @@ export class BoundsSystem implements System {
                 // Ищем баунд в иерархии
                 const bound = this.findBound(hit.object);
                 if (bound && bound.userData.isBound) {
-                    const gridPos = this.tileMap.worldToGrid(bound.position);
+                    const entity = this.entityManager.get(bound.userData.entityId);
+                    
+                    // ВАЖНО: используем позицию СУЩНОСТИ, а не баунда, 
+                    // так как баунды имеют локальные смещения относительно сущности
+                    const entityGridPos = entity ? this.tileMap.worldToGrid(entity.position) : this.tileMap.worldToGrid(bound.position);
+                    
+                    let distance: number | undefined = undefined;
+                    let gridDistance: number | undefined = undefined;
+                    
+                    if (player && entity) {
+                        distance = player.position.distanceTo(entity.position);
+                        const playerGridPos = this.tileMap.worldToGrid(player.position);
+                        gridDistance = GridCoords.distance(playerGridPos, entityGridPos);
+                        console.log('Grid distance calculated:', {
+                            playerGrid: playerGridPos,
+                            entityGrid: entityGridPos,
+                            distance: gridDistance,
+                            entityId: entity.id
+                        });
+                    }
 
                     return {
                         entityId: bound.userData.entityId,
-                        gridPos: gridPos,
-                        position: bound.position,
+                        gridPos: entityGridPos,
+                        position: entity ? entity.position : bound.position,
+                        distance: distance,
+                        gridDistance: gridDistance,
                         mesh: bound,
                         modifiers: {
-                            health_points: bound.userData.hpModifier
-                        }
+                            health_points: bound.userData.hpModifier,
+                        },
                     };
                 }
             }
@@ -133,13 +195,17 @@ export class BoundsSystem implements System {
             const lz = entity.position.z - wz;
 
             this.makeBound(lx, this.boundYPos, lz, entity).then((mesh) => {
-                mesh.userData.hpModifier = 5;
+                mesh.userData.modifiers = {
+                    health_points: 5,
+                };
                 entity.mesh.add(mesh);
             });
         });
 
         this.makeBound(0, this.boundYPos, 0, entity).then((mesh) => {
-            mesh.userData.hpModifier = 5;
+            mesh.userData.modifiers = {
+                health_points: 10,
+            };
             entity.mesh.add(mesh);
         });
     }
@@ -162,9 +228,5 @@ export class BoundsSystem implements System {
         };
 
         return mesh;
-    }
-
-    update(dt: number): void {
-        // throw new Error("Method not implemented.");
     }
 }

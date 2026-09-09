@@ -40,6 +40,7 @@
   ],
   "spawns": [
     { "type": "player", "q": 6, "r": 6 },
-    { "type": "enemy", "q": 6, "r" : 10, "name": "Barbara" }
+    { "type": "enemy", "q": 6, "r" : 10, "name": "Barbara" },
+    { "type": "enemy", "q": 6, "r" : 14, "name": "Newbe" }
   ]
 }

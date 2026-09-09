@@ -1,4 +1,4 @@
-type EventCallback = (payload: unknown) => void;
+type EventCallback = (payload: undefined) => void;
 
 export class EventBus {
     private static instance: EventBus;

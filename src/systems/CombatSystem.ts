@@ -46,7 +46,7 @@ export class CombatSystem implements System {
 
     private checkHp(entity: Entity): void {
         if (entity instanceof Unit && entity.healthPoints <= 0) {
-            this.scene.remove(entity.mesh);
+            EntityManager.getInstance().remove(entity.id, this.scene);
         }
     }
 }

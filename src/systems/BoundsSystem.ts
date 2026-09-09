@@ -95,8 +95,9 @@ export class BoundsSystem implements System {
     }
 
     /**
-     * Проверяет, попал ли клик на баунд врага
-     * @returns объект с entityId если попали на баунд врага, иначе null
+     * Возвращает СУЩНОСТЬ по которой произошел клик.
+     * @param event 
+     * @returns HitTarget | null
      */
     private pickEnemyBound(event: PointerEvent): HitTarget | null {
         const rect = this.engine.renderer.domElement.getBoundingClientRect();
@@ -139,6 +140,10 @@ export class BoundsSystem implements System {
         return null;
     }
 
+    /**
+     * Рисует области контакта для каждой сущности (WIP разные для разных сущностей)
+     * @param entity 
+     */
     private drawBounds(entity: Entity): void {
         const currentGrid = this.tileMap.worldToGrid(entity.position);
         const neighborTiles = GridCoords.neighbors(
@@ -171,6 +176,14 @@ export class BoundsSystem implements System {
         });
     }
 
+    /**
+     * Создание баунда 
+     * @param x - относительно сущности
+     * @param y - относительно сущности
+     * @param z - относительно сущности
+     * @param entity - сущность
+     * @returns 
+     */
     private async makeBound(
         x: number,
         y: number,

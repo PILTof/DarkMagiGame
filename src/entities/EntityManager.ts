@@ -3,30 +3,40 @@ import type { Entity } from "./Entity.ts";
 import { Player, PLAYER_ID } from "./Player.ts";
 
 export class EntityManager {
-  private readonly entities = new Map<string, Entity>();
+    private static instance: EntityManager | undefined;
 
-  add(entity: Entity, scene: THREE.Scene): void {
-    this.entities.set(entity.id, entity);
-    scene.add(entity.mesh);
-  }
+    public static getInstance(): EntityManager {
+        if (!EntityManager.instance) {
+            EntityManager.instance = new EntityManager();
+        }
 
-  remove(id: string, scene: THREE.Scene): void {
-    const entity = this.entities.get(id);
-    if (!entity) return;
-    scene.remove(entity.mesh);
-    this.entities.delete(id);
-  }
+        return EntityManager.instance;
+    }
 
-  get(id: string): Entity | undefined {
-    return this.entities.get(id);
-  }
+    private readonly entities = new Map<string, Entity>();
 
-  getPlayer(): Player | undefined {
-    const entity = this.entities.get(PLAYER_ID);
-    return entity instanceof Player ? entity : undefined;
-  }
+    add(entity: Entity, scene: THREE.Scene): void {
+        this.entities.set(entity.id, entity);
+        scene.add(entity.mesh);
+    }
 
-  getAll(): Entity[] {
-    return [...this.entities.values()];
-  }
+    remove(id: string, scene: THREE.Scene): void {
+        const entity = this.entities.get(id);
+        if (!entity) return;
+        scene.remove(entity.mesh);
+        this.entities.delete(id);
+    }
+
+    get(id: string): Entity | undefined {
+        return this.entities.get(id);
+    }
+
+    getPlayer(): Player | undefined {
+        const entity = this.entities.get(PLAYER_ID);
+        return entity instanceof Player ? entity : undefined;
+    }
+
+    getAll(): Entity[] {
+        return [...this.entities.values()];
+    }
 }

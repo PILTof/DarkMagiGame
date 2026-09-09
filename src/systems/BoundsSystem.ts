@@ -4,10 +4,12 @@ import type { EventBus } from "../core/EventBus";
 import type { Engine } from "../engine/Engine";
 import type { IsometricCamera } from "../engine/IsometricCamera";
 import type { Entity } from "../entities/Entity";
-import type { EntityManager } from "../entities/EntityManager";
-import { GridCoords, type GridPos } from "../world/GridCoords";
-import type { TileMap } from "../world/TileMap";
+import { EntityManager } from "../entities/EntityManager";
+import { Player } from "../entities/Player";
+import { GridCoords } from "../world/GridCoords";
+import { TileMap } from "../world/TileMap";
 import { UnitBoundsTile } from "../world/tiles/UnitBoundsTile";
+import { HitTarget } from "./DTOs/HitTarget";
 import type { System } from "./System";
 
 export type BoundModifiers = {
@@ -17,7 +19,6 @@ export type BoundModifiers = {
 };
 
 export class BoundsSystem implements System {
-    private readonly entityManager: EntityManager;
     private readonly tileMap: TileMap;
     private readonly boundYPos: number = 0.03;
     private readonly eventBus: EventBus;
@@ -25,71 +26,71 @@ export class BoundsSystem implements System {
     private readonly pointer = new THREE.Vector2();
     private readonly engine: Engine;
     private readonly camera: IsometricCamera;
+    private readonly player: Entity | any;
+
     public action: {
-        payload: any;
+        target: HitTarget | null;
         run: boolean;
     } = {
-        payload: undefined,
+        target: null,
         run: false,
     };
 
     constructor(
-        entityManager: EntityManager,
         tileMap: TileMap,
         eventBus: EventBus,
         engine: Engine,
         camera: IsometricCamera,
     ) {
-        this.entityManager = entityManager;
         this.tileMap = tileMap;
         this.eventBus = eventBus;
         this.engine = engine;
         this.camera = camera;
 
-        this.eventBus.on("player:move-to", (payload) => {
-            this.action.payload = payload;
-            this.action.run = true;
-            this.checkHit(payload);
-        });
+        
+        this.player = EntityManager.getInstance().getPlayer();
 
-        this.entityManager.getAll().forEach((entity) => {
+        if (this.player) {
+            this.eventBus.on("player:move-to", (payload: any) => {
+                this.action.run = true;
+                this.action.target = this.pickEnemyBound(payload.event);
+                this.checkHit(this.player);
+            });
+        }
+
+
+        EntityManager.getInstance().getAll().forEach((entity) => {
             this.drawBounds(entity);
         });
     }
 
-    private checkHit(payload: any) {
+    private checkHit(sniper: Entity) {
         // Сначала проверяем клик на баунд врага
-        const boundHit = this.pickEnemyBound(payload.event);
-        if (boundHit) {
-            console.log('Bound hit detected:', {
-                entityId: boundHit.entityId,
-                gridDistance: boundHit.gridDistance,
-                distance: boundHit.distance
-            });
-
+        if (this.action.target) {
+            const sniperGridPos = this.tileMap.worldToGrid(sniper.position);
             // Если не удалось вычислить расстояние (например, нет игрока), останавливаем
-            if (boundHit.gridDistance === undefined) {
-                console.log('Grid distance undefined, stopping movement');
+            if (this.action.target.getGridDistance(sniperGridPos) === undefined) {
                 this.eventBus.emit("player:move-stop", {});
                 this.action.run = false;
+                this.action.target;
                 return;
             }
 
-            // Если расстояние <= 2 гекса, останавливаем игрока (он достаточно близко для атаки)
-            if (boundHit.gridDistance <= 2) {
-                console.log(`Grid distance ${boundHit.gridDistance} <= 2, stopping movement`);
+            if (this.action.target.getGridDistance(sniperGridPos) <= Player.interactionDistance) {
                 this.eventBus.emit("player:move-stop", {});
                 this.action.run = false;
+                this.action.target = null;
             } else {
-                console.log(`Grid distance ${boundHit.gridDistance} > 2, continuing movement`);
-                // Игрок продолжает двигаться к цели
+                
             }
+        } else {
+            this.action.run = false;
         }
     }
 
     update(dt: number): void {
-        if (this.action.run) {
-            this.checkHit(this.action.payload);
+        if (this.action.run && this.action.target) {
+            this.checkHit(this.player);
         }
     }
 
@@ -97,15 +98,7 @@ export class BoundsSystem implements System {
      * Проверяет, попал ли клик на баунд врага
      * @returns объект с entityId если попали на баунд врага, иначе null
      */
-    private pickEnemyBound(event: PointerEvent): {
-        entityId: string;
-        gridPos: GridPos;
-        position: THREE.Vector3Like;
-        mesh: Object3D;
-        modifiers: BoundModifiers;
-        distance: number | undefined;
-        gridDistance: number | undefined;
-    } | null {
+    private pickEnemyBound(event: PointerEvent): HitTarget | null {
         const rect = this.engine.renderer.domElement.getBoundingClientRect();
         this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -113,8 +106,7 @@ export class BoundsSystem implements System {
         this.raycaster.setFromCamera(this.pointer, this.camera.camera);
 
         // Получаем все сущности и проверяем их баунды
-        const entities = this.entityManager.getAll();
-        const player = this.entityManager.getPlayer();
+        const entities = EntityManager.getInstance().getAll();
 
         for (const entity of entities) {
             // Пропускаем игрока
@@ -127,38 +119,7 @@ export class BoundsSystem implements System {
                 // Ищем баунд в иерархии
                 const bound = this.findBound(hit.object);
                 if (bound && bound.userData.isBound) {
-                    const entity = this.entityManager.get(bound.userData.entityId);
-                    
-                    // ВАЖНО: используем позицию СУЩНОСТИ, а не баунда, 
-                    // так как баунды имеют локальные смещения относительно сущности
-                    const entityGridPos = entity ? this.tileMap.worldToGrid(entity.position) : this.tileMap.worldToGrid(bound.position);
-                    
-                    let distance: number | undefined = undefined;
-                    let gridDistance: number | undefined = undefined;
-                    
-                    if (player && entity) {
-                        distance = player.position.distanceTo(entity.position);
-                        const playerGridPos = this.tileMap.worldToGrid(player.position);
-                        gridDistance = GridCoords.distance(playerGridPos, entityGridPos);
-                        console.log('Grid distance calculated:', {
-                            playerGrid: playerGridPos,
-                            entityGrid: entityGridPos,
-                            distance: gridDistance,
-                            entityId: entity.id
-                        });
-                    }
-
-                    return {
-                        entityId: bound.userData.entityId,
-                        gridPos: entityGridPos,
-                        position: entity ? entity.position : bound.position,
-                        distance: distance,
-                        gridDistance: gridDistance,
-                        mesh: bound,
-                        modifiers: {
-                            health_points: bound.userData.hpModifier,
-                        },
-                    };
+                    return new HitTarget(bound);
                 }
             }
         }

@@ -58,7 +58,7 @@ export class Game {
     this.tileMap = new TileMap(this.engine.scene);
     await this.tileMap.buildFromMap(mapData, tileAssets, objectAssets);
 
-    const entityManager = new EntityManager();
+    const entityManager = EntityManager.getInstance();
     const pathfinding = new PathfindingService(this.tileMap);
 
     const spawn = this.tileMap.getPlayerSpawn();
@@ -90,7 +90,7 @@ export class Game {
       new SelectionSystem(this.eventBus),
       new MovementSystem(entityManager, pathfinding, this.tileMap, this.eventBus),
       new AnimationSystem(entityManager),
-      new BoundsSystem(entityManager, this.tileMap, this.eventBus, this.engine, this.camera)
+      new BoundsSystem(this.tileMap, this.eventBus, this.engine, this.camera)
     ];
 
     if (env.debug) {

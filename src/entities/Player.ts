@@ -10,6 +10,8 @@ const PLAYER_SIZE = 0.45;
 const PLAYER_HEIGHT = 0.5;
 
 export class Player extends Unit {
+  public static readonly interactionDistance:number = 4;
+
   constructor(spawn: GridPos, assets?: EntityAssets) {
     const group = Player.createMesh(assets);
     super(PLAYER_ID, spawn, group);

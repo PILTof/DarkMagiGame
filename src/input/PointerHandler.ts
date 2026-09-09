@@ -6,7 +6,6 @@ export class PointerHandler {
   constructor(camera: IsometricCamera) {
     this.camera = camera;
     window.addEventListener("wheel", (e) => {
-      e.preventDefault();
       const factor = e.deltaY > 0 ? 0.9 : 1.1;
       this.camera.zoom(factor);
     });

@@ -16,6 +16,9 @@ export class Player extends Unit {
     const group = Player.createMesh(assets);
     super(PLAYER_ID, spawn, group);
     this.speed = UNIT_SPEED;
+    
+    // Устанавливаем начальное здоровье игрока
+    this.setHealth(100, 100);
   }
 
   private static createMesh(assets?: EntityAssets): THREE.Group {

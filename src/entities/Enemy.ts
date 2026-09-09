@@ -8,6 +8,9 @@ export class Enemy extends Unit {
     constructor(id: string, gridPos: GridPos, assets: EntityAssets) {
         const group = Enemy.createMesh(id, assets);
         super(id, gridPos, group);
+        
+        // Устанавливаем начальное здоровье врага
+        this.setHealth(150, 150);
     }
 
     private static createMesh(id: string, assets: EntityAssets): Group {

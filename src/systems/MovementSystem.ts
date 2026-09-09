@@ -7,6 +7,7 @@ import type { PathfindingService } from "../world/PathfindingService.ts";
 import type { TileMap } from "../world/TileMap.ts";
 import type { PlayerMovePayload } from "./InputSystem.ts";
 import type { System } from "./System.ts";
+import { PlayerMovement } from "./contracts/EventNamesInterface.ts";
 
 export class MovementSystem implements System {
     private readonly entityManager: EntityManager;
@@ -26,8 +27,8 @@ export class MovementSystem implements System {
         this.tileMap = tileMap;
         this.eventBus = eventBus;
         this.player = entityManager.getPlayer();
-        this.eventBus.on("player:move-stop", (e) => this.onPlayerStopped(e));
-        this.eventBus.on("player:move-to", (payload) => {
+        this.eventBus.on(PlayerMovement.move_stop, (e) => this.onPlayerStopped(e));
+        this.eventBus.on(PlayerMovement.move_to, (payload) => {
             this.onPlayerMoveTo(payload);
         });
 

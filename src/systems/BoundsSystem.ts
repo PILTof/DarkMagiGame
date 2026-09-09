@@ -11,6 +11,7 @@ import { TileMap } from "../world/TileMap";
 import { UnitBoundsTile } from "../world/tiles/UnitBoundsTile";
 import { HitTarget } from "./DTOs/HitTarget";
 import type { System } from "./System";
+import { PlayerCombat, PlayerMovement } from "./contracts/EventNamesInterface";
 
 export type BoundModifiers = {
     health_points?: number;
@@ -51,7 +52,7 @@ export class BoundsSystem implements System {
         this.player = EntityManager.getInstance().getPlayer();
 
         if (this.player) {
-            this.eventBus.on("player:move-to", (payload: any) => {
+            this.eventBus.on(PlayerMovement.move_to, (payload: any) => {
                 this.action.run = true;
                 this.action.target = this.pickEnemyBound(payload.event);
                 this.checkHit(this.player);
@@ -70,14 +71,15 @@ export class BoundsSystem implements System {
             const sniperGridPos = this.tileMap.worldToGrid(sniper.position);
             // Если не удалось вычислить расстояние (например, нет игрока), останавливаем
             if (this.action.target.getGridDistance(sniperGridPos) === undefined) {
-                this.eventBus.emit("player:move-stop", {});
+                this.eventBus.emit(PlayerMovement.move_stop, {});
                 this.action.run = false;
                 this.action.target;
                 return;
             }
 
             if (this.action.target.getGridDistance(sniperGridPos) <= Player.interactionDistance) {
-                this.eventBus.emit("player:move-stop", {});
+                this.eventBus.emit(PlayerMovement.move_stop, {});
+                this.eventBus.emit(PlayerCombat.hit_targer, {target: this.action.target, sniper: sniper})
                 this.action.run = false;
                 this.action.target = null;
             } else {

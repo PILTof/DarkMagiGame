@@ -5,6 +5,7 @@ import type { IsometricCamera } from "../engine/IsometricCamera.ts";
 import type { EntityManager } from "../entities/EntityManager.ts";
 import type { TileMap } from "../world/TileMap.ts";
 import type { System } from "./System.ts";
+import { PlayerMovement } from "./contracts/EventNamesInterface.ts";
 
 export type PlayerMovePayload = { x: number; z: number, event: Event };
 
@@ -46,7 +47,7 @@ export class InputSystem implements System {
     if (!target) return;
 
     const payload: PlayerMovePayload = { x: target.x, z: target.z, event: event };
-    this.eventBus.emit("player:move-to", payload);
+    this.eventBus.emit(PlayerMovement.move_to, payload);
   }
 
   private pickWorldPosition(event: PointerEvent): THREE.Vector3 | null {

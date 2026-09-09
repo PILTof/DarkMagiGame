@@ -1,5 +1,5 @@
 export abstract class Action {
 
-    public abstract run(): any;
+    public abstract run(): Promise<any>;
     
 }

@@ -5,5 +5,8 @@ export class AttackProjectileAction extends Action {
         super();
     }
 
-    public run(): any {}
+    public async run(): Promise<any> {
+
+        
+    }
 }

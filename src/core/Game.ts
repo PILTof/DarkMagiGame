@@ -9,6 +9,7 @@ import { Enemy } from "../entities/Enemy.ts";
 import { EntityAssets } from "../entities/EntityAssets.ts";
 import { EntityManager } from "../entities/EntityManager.ts";
 import { Player } from "../entities/Player.ts";
+import { SpriteAssets } from "../entities/SpriteAssets.ts";
 import { PointerHandler } from "../input/PointerHandler.ts";
 import { AnimationSystem } from "../systems/AnimationSystem.ts";
 import { BoundsSystem } from "../systems/BoundsSystem.ts";
@@ -50,11 +51,14 @@ export class Game {
     const mapData = await this.mapLoader.load(mapPath);
 
     const assetLoader = new AssetLoader();
-    const [tileAssets, objectAssets, entityAssets] = await Promise.all([
+    const [tileAssets, objectAssets, entityAssets, spriteAssets] = await Promise.all([
       TileAssets.preload(assetLoader),
       MapObjectAssets.preload(assetLoader),
       EntityAssets.preload(assetLoader),
+      SpriteAssets.preload(assetLoader),
     ]);
+
+    console.log("[Game] Loaded sprites:", spriteAssets.getLoadedSprites());
 
     this.tileMap = new TileMap(this.engine.scene);
     await this.tileMap.buildFromMap(mapData, tileAssets, objectAssets);

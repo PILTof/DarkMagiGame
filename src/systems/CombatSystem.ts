@@ -1,5 +1,6 @@
 import type { Scene } from "three";
 import { EventBus } from "../core/EventBus";
+import { Enemy } from "../entities/Enemy";
 import type { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
 import { Unit } from "../entities/Unit";
@@ -37,7 +38,7 @@ export class CombatSystem implements System {
         console.log("hitted", [sniper.id, target.entityId]);
         
         const unit = target.entity;
-        if (unit instanceof Unit) {
+        if (unit instanceof Enemy) {
             const modifiers = target.getBoundModifiers()
             unit.takeDamage(modifiers?.health_points ? modifiers.health_points * 6 : 6);
         }

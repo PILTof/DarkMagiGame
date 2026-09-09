@@ -1,30 +1,11 @@
 import * as THREE from "three";
-import type { Unit } from "./Unit.ts";
-
-export interface ProjectileConfig {
-    from: THREE.Vector3;
-    target: Unit;
-    damage: number;
-    speed?: number;
-    sprite?: THREE.Sprite;
-    trailLength?: number;
-    trailInterval?: number;
-}
+import type { Unit } from "../Unit.ts";
+import { Projectile, type ProjectileConfig } from "./Projectile.ts";
 
 /**
- * Снаряд, летящий к цели
+ * Огненный шар с визуальным следом
  */
-export class Projectile {
-    readonly id: string;
-    readonly mesh: THREE.Sprite;
-    readonly from: THREE.Vector3;
-    readonly target: Unit;
-    readonly speed: number;
-    readonly damage: number;
-    readonly onHit: (target: Unit, damage: number) => void;
-    
-    private progress: number = 0;
-    private distance: number;
+export class FireballProjectile extends Projectile {
     private readonly trail: THREE.Sprite[] = [];
     private readonly trailLength: number;
     private readonly trailInterval: number;
@@ -34,52 +15,46 @@ export class Projectile {
         config: ProjectileConfig,
         onHit: (target: Unit, damage: number) => void
     ) {
-        this.id = `projectile_${Date.now()}_${Math.random()}`;
-        this.from = config.from.clone();
-        this.target = config.target;
-        this.damage = config.damage;
-        this.speed = config.speed ?? 8;
-        this.onHit = onHit;
+        super(config, onHit);
+        
         this.trailLength = config.trailLength ?? 10;
-        this.trailInterval = config.trailInterval ?? 0.02; // Создавать след каждые 0.02 секунды
-
-        // Используем переданный спрайт или создаем заглушку
-        if (config.sprite) {
-            this.mesh = config.sprite;
-        } else {
-            // Fallback: простой оранжевый круг
-            const canvas = document.createElement("canvas");
-            canvas.width = 32;
-            canvas.height = 32;
-            const ctx = canvas.getContext("2d")!;
-            ctx.fillStyle = "#ff6600";
-            ctx.beginPath();
-            ctx.arc(16, 16, 12, 0, Math.PI * 2);
-            ctx.fill();
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            const material = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-            });
-            this.mesh = new THREE.Sprite(material);
-        }
-
-        this.mesh.scale.set(0.3, 0.3, 1);
-        this.mesh.position.copy(this.from);
-
-        // Вычисляем дистанцию до цели
-        this.distance = this.from.distanceTo(this.target.position);
+        this.trailInterval = config.trailInterval ?? 0.02;
     }
 
     /**
-     * Обновляет позицию снаряда
-     * @returns true если достиг цели
+     * Создает fallback спрайт для файрбола
+     */
+    protected static override createFallbackSprite(): THREE.Sprite {
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d")!;
+
+        // Рисуем огненный шар
+        const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, "#ffff00"); // Желтый центр
+        gradient.addColorStop(0.5, "#ff6600"); // Оранжевый
+        gradient.addColorStop(1, "rgba(255, 0, 0, 0)"); // Прозрачный красный
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 64);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            blending: THREE.AdditiveBlending, // Свечение
+        });
+
+        return new THREE.Sprite(material);
+    }
+
+    /**
+     * Обновляет позицию файрбола и его следа
      */
     update(dt: number, scene: THREE.Scene): boolean {
         // Обновляем прогресс
-        const progressDelta = (this.speed / this.distance) * dt;
-        this.progress += progressDelta;
+        const hasHit = this.updateProgress(dt);
 
         // Создаем след
         this.trailTimer += dt;
@@ -91,17 +66,13 @@ export class Projectile {
         // Обновляем след (fade out)
         this.updateTrail(dt);
 
-        if (this.progress >= 1.0) {
+        if (hasHit) {
             // Достигли цели
             return true;
         }
 
         // Обновляем позицию (интерполяция от стартовой к текущей позиции цели)
-        this.mesh.position.lerpVectors(
-            this.from,
-            this.target.position,
-            this.progress
-        );
+        this.updateBasePosition();
 
         // Добавляем небольшую высоту (арка)
         const arcHeight = Math.sin(this.progress * Math.PI) * 0.5;
@@ -152,11 +123,9 @@ export class Projectile {
     }
 
     /**
-     * Очищает ресурсы снаряда
+     * Очищает ресурсы снаряда и его следа
      */
-    dispose(scene: THREE.Scene): void {
-        scene.remove(this.mesh);
-        
+    override dispose(scene: THREE.Scene): void {
         // Очищаем след
         for (const particle of this.trail) {
             scene.remove(particle);
@@ -167,10 +136,7 @@ export class Projectile {
         }
         this.trail.length = 0;
 
-        // Очищаем основной mesh
-        if (this.mesh.material.map) {
-            this.mesh.material.map.dispose();
-        }
-        this.mesh.material.dispose();
+        // Вызываем базовый dispose
+        super.dispose(scene);
     }
 }

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { EventBus } from "../core/EventBus.ts";
-import type { Projectile, ProjectileConfig } from "../entities/Projectile.ts";
-import { Projectile as ProjectileClass } from "../entities/Projectile.ts";
+import { FireballProjectile } from "../entities/Projectiles/FireballProjectile.ts";
+import type { Projectile, ProjectileConfig } from "../entities/Projectiles/Projectile.ts";
 import type { SpriteAssets } from "../entities/SpriteAssets.ts";
 import type { Unit } from "../entities/Unit.ts";
 import type { System } from "./System.ts";
@@ -76,16 +76,28 @@ export class ProjectileSystem implements System {
             trailInterval: 0.02,
         };
 
-        const projectile = new ProjectileClass(
-            projectileConfig,
-            (target, damage) => this.onProjectileHit(target, damage)
-        );
+        // Создаем конкретный тип снаряда
+        let projectile: Projectile;
+        
+        switch (config.spriteType) {
+            case "fireball":
+            default:
+                projectile = new FireballProjectile(
+                    projectileConfig,
+                    (target, damage) => this.onProjectileHit(target, damage)
+                );
+                break;
+            // Можно добавить другие типы:
+            // case "arrow":
+            //     projectile = new ArrowProjectile(...);
+            //     break;
+        }
 
         this.projectiles.set(projectile.id, projectile);
         this.scene.add(projectile.mesh);
 
         console.log(
-            `[ProjectileSystem] Fired projectile from ${config.from.toArray()} to target ${config.target.id}`
+            `[ProjectileSystem] Fired ${config.spriteType} from ${config.from.toArray()} to target ${config.target.id}`
         );
     }
 

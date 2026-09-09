@@ -13,7 +13,7 @@ import { SpriteAssets } from "../entities/SpriteAssets.ts";
 import { PointerHandler } from "../input/PointerHandler.ts";
 import { AnimationSystem } from "../systems/AnimationSystem.ts";
 import { BoundsSystem } from "../systems/BoundsSystem.ts";
-import { CombatSystem } from "../systems/Combat/CombatSystem.ts";
+import { CombatSystem } from "../systems/CombatSystem.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
 import { MovementSystem } from "../systems/MovementSystem.ts";
 import { ProjectileSystem } from "../systems/ProjectileSystem.ts";

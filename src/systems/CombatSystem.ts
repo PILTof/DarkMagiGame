@@ -1,15 +1,15 @@
 import type { Scene } from "three";
-import { EventBus } from "../../core/EventBus";
-import { Enemy } from "../../entities/Enemy";
-import type { Entity } from "../../entities/Entity";
-import type { EntityAssets } from "../../entities/EntityAssets";
-import { EntityManager } from "../../entities/EntityManager";
-import type { SpriteAssets } from "../../entities/SpriteAssets";
-import { Unit } from "../../entities/Unit";
-import { PlayerCombat } from "../contracts/EventNamesInterface";
-import type { HitTarget } from "../DTOs/HitTarget";
-import type { ProjectileSystem } from "../ProjectileSystem";
-import type { System } from "../System";
+import { EventBus } from "../core/EventBus";
+import { Enemy } from "../entities/Enemy";
+import type { Entity } from "../entities/Entity";
+import type { EntityAssets } from "../entities/EntityAssets";
+import { EntityManager } from "../entities/EntityManager";
+import type { SpriteAssets } from "../entities/SpriteAssets";
+import { Unit } from "../entities/Unit";
+import { PlayerCombat } from "./contracts/EventNamesInterface";
+import type { HitTarget } from "./DTOs/HitTarget";
+import type { ProjectileSystem } from "./ProjectileSystem";
+import type { System } from "./System";
 
 export class CombatSystem implements System {
     private readonly scene: Scene;

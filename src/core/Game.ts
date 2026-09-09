@@ -12,7 +12,7 @@ import { Player } from "../entities/Player.ts";
 import { PointerHandler } from "../input/PointerHandler.ts";
 import { AnimationSystem } from "../systems/AnimationSystem.ts";
 import { BoundsSystem } from "../systems/BoundsSystem.ts";
-import { CombatSystem } from "../systems/CombatSystem.ts";
+import { CombatSystem } from "../systems/Combat/CombatSystem.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
 import { MovementSystem } from "../systems/MovementSystem.ts";
 import { SelectionSystem } from "../systems/SelectionSystem.ts";
@@ -92,7 +92,7 @@ export class Game {
       new MovementSystem(entityManager, pathfinding, this.tileMap, this.eventBus),
       new AnimationSystem(entityManager),
       new BoundsSystem(this.tileMap, this.eventBus, this.engine, this.camera),
-      new CombatSystem(this.engine.scene)
+      new CombatSystem(this.engine.scene, entityAssets)
     ];
 
     if (env.debug) {

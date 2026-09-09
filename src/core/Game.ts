@@ -16,6 +16,7 @@ import { BoundsSystem } from "../systems/BoundsSystem.ts";
 import { CombatSystem } from "../systems/Combat/CombatSystem.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
 import { MovementSystem } from "../systems/MovementSystem.ts";
+import { ProjectileSystem } from "../systems/ProjectileSystem.ts";
 import { SelectionSystem } from "../systems/SelectionSystem.ts";
 import type { System } from "../systems/System.ts";
 import { MapLoader } from "../world/map/index.ts";
@@ -90,13 +91,22 @@ export class Game {
     }
 
 
+    // Создаем ProjectileSystem отдельно, чтобы передать её в CombatSystem
+    const projectileSystem = new ProjectileSystem(this.engine.scene, spriteAssets, this.eventBus);
+
     this.systems = [
       new InputSystem(this.engine, this.camera, this.tileMap, entityManager, this.eventBus),
       new SelectionSystem(this.eventBus),
       new MovementSystem(entityManager, pathfinding, this.tileMap, this.eventBus),
       new AnimationSystem(entityManager),
       new BoundsSystem(this.tileMap, this.eventBus, this.engine, this.camera),
-      new CombatSystem(this.engine.scene, entityAssets)
+      projectileSystem,
+      new CombatSystem(
+        this.engine.scene, 
+        entityAssets, 
+        spriteAssets,
+        projectileSystem
+      )
     ];
 
     if (env.debug) {

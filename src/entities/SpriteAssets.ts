@@ -12,7 +12,8 @@ export type SpriteType =
     | "hit_effect"
     | "skill_icon"
     | "buff_icon"
-    | "debuff_icon";
+    | "debuff_icon"
+    | "fireball";
 
 /**
  * Пути к спрайтам
@@ -26,6 +27,7 @@ const SPRITE_PATHS: Partial<Record<SpriteType, string>> = {
     skill_icon: "/assets/sprites/skill.png",
     buff_icon: "/assets/sprites/buff.png",
     debuff_icon: "/assets/sprites/debuff.png",
+    fireball: "/assets/sprites/fireball.png"
 };
 
 /**

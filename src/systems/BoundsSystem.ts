@@ -10,6 +10,12 @@ import type { TileMap } from "../world/TileMap";
 import { UnitBoundsTile } from "../world/tiles/UnitBoundsTile";
 import type { System } from "./System";
 
+export type BoundModifiers = {
+    health_points?: number,
+    mana_pool?: number,
+    stamina?: number
+};
+
 export class BoundsSystem implements System {
     private readonly entityManager: EntityManager;
     private readonly tileMap: TileMap;
@@ -53,13 +59,12 @@ export class BoundsSystem implements System {
      * Проверяет, попал ли клик на баунд врага
      * @returns объект с entityId если попали на баунд врага, иначе null
      */
-    private pickEnemyBound(
-        event: PointerEvent,
-    ): {
+    private pickEnemyBound(event: PointerEvent): {
         entityId: string;
         gridPos: GridPos;
         position: THREE.Vector3Like;
         mesh: Object3D;
+        modifiers: BoundModifiers
     } | null {
         const rect = this.engine.renderer.domElement.getBoundingClientRect();
         this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -88,6 +93,9 @@ export class BoundsSystem implements System {
                         gridPos: gridPos,
                         position: bound.position,
                         mesh: bound,
+                        modifiers: {
+                            health_points: bound.userData.hpModifier
+                        }
                     };
                 }
             }
@@ -124,14 +132,16 @@ export class BoundsSystem implements System {
             const lx = entity.position.x - wx;
             const lz = entity.position.z - wz;
 
-            this.makeBound(lx, this.boundYPos, lz, entity).then((mesh) =>
-                entity.mesh.add(mesh),
-            );
+            this.makeBound(lx, this.boundYPos, lz, entity).then((mesh) => {
+                mesh.userData.hpModifier = 5;
+                entity.mesh.add(mesh);
+            });
         });
 
-        this.makeBound(0, this.boundYPos, 0, entity).then((mesh) =>
-            entity.mesh.add(mesh),
-        );
+        this.makeBound(0, this.boundYPos, 0, entity).then((mesh) => {
+            mesh.userData.hpModifier = 5;
+            entity.mesh.add(mesh);
+        });
     }
 
     private async makeBound(

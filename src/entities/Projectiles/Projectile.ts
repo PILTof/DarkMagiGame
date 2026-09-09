@@ -8,8 +8,6 @@ export interface ProjectileConfig {
     damage: number;
     speed?: number;
     sprite?: THREE.Sprite;
-    trailLength?: number;
-    trailInterval?: number;
 }
 
 /**
@@ -21,17 +19,17 @@ export abstract class Projectile extends SpriteEntity {
     readonly speed: number;
     readonly damage: number;
     readonly onHit: (target: Unit, damage: number) => void;
-    
+
     protected progress: number = 0;
     protected distance: number;
 
     constructor(
         config: ProjectileConfig,
-        onHit: (target: Unit, damage: number) => void
+        onHit: (target: Unit, damage: number) => void,
     ) {
         const sprite = config.sprite ?? Projectile.createFallbackSprite();
         super(sprite, config.from);
-        
+
         this.from = config.from.clone();
         this.target = config.target;
         this.damage = config.damage;
@@ -57,7 +55,7 @@ export abstract class Projectile extends SpriteEntity {
         ctx.beginPath();
         ctx.arc(16, 16, 12, 0, Math.PI * 2);
         ctx.fill();
-        
+
         const texture = new THREE.CanvasTexture(canvas);
         const material = new THREE.SpriteMaterial({
             map: texture,
@@ -75,20 +73,10 @@ export abstract class Projectile extends SpriteEntity {
     /**
      * Обновляет прогресс движения
      */
-    protected updateProgress(dt: number): boolean {
-        const progressDelta = (this.speed / this.distance) * dt;
-        this.progress += progressDelta;
-        return this.progress >= 1.0;
-    }
+    protected abstract updateProgress(dt: number): boolean;
 
     /**
      * Обновляет базовую позицию (линейная интерполяция)
      */
-    protected updateBasePosition(): void {
-        this.mesh.position.lerpVectors(
-            this.from,
-            this.target.position,
-            this.progress
-        );
-    }
+    protected abstract updateBasePosition(): void;
 }

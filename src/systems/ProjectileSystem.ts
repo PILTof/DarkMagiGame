@@ -1,18 +1,13 @@
 import * as THREE from "three";
 import type { EventBus } from "../core/EventBus.ts";
-import { FireballProjectile } from "../entities/Projectiles/FireballProjectile.ts";
-import type { Projectile, ProjectileConfig } from "../entities/Projectiles/Projectile.ts";
+import type {
+    Projectile
+} from "../entities/Projectiles/Projectile.ts";
+import { TrailedProjectile } from "../entities/Projectiles/TrailedProjectile.ts";
 import type { SpriteAssets } from "../entities/SpriteAssets.ts";
-import type { Unit } from "../entities/Unit.ts";
 import type { System } from "./System.ts";
-
-export interface FireProjectileConfig {
-    from: THREE.Vector3;
-    target: Unit;
-    damage: number;
-    speed?: number;
-    spriteType?: "fireball" | "arrow" | "magic";
-}
+import { Effects } from "./contracts/EventNamesInterface.ts";
+import type { ProjectileConfigs } from "./contracts/ProjectileConfigs.ts";
 
 /**
  * Система управления снарядами
@@ -26,7 +21,7 @@ export class ProjectileSystem implements System {
     constructor(
         scene: THREE.Scene,
         spriteAssets: SpriteAssets,
-        eventBus: EventBus
+        eventBus: EventBus,
     ) {
         this.scene = scene;
         this.spriteAssets = spriteAssets;
@@ -62,49 +57,51 @@ export class ProjectileSystem implements System {
     /**
      * Выпускает снаряд
      */
-    fire(config: FireProjectileConfig): void {
-        // Создаем спрайт для снаряда
-        const sprite = this.createProjectileSprite(config.spriteType ?? "fireball");
-
-        const projectileConfig: ProjectileConfig = {
-            from: config.from,
-            target: config.target,
-            damage: config.damage,
-            speed: config.speed ?? 8,
-            sprite: sprite,
-            trailLength: 10,
-            trailInterval: 0.02,
-        };
-
+    execute(config: ProjectileConfigs): string {
         // Создаем конкретный тип снаряда
-        let projectile: Projectile;
-        
-        switch (config.spriteType) {
-            case "fireball":
-            default:
-                projectile = new FireballProjectile(
-                    projectileConfig,
-                    (target, damage) => this.onProjectileHit(target, damage)
-                );
-                break;
-            // Можно добавить другие типы:
-            // case "arrow":
-            //     projectile = new ArrowProjectile(...);
-            //     break;
-        }
+        let projectile: Projectile = this.createProjectile(config);
 
         this.projectiles.set(projectile.id, projectile);
         this.scene.add(projectile.mesh);
 
         console.log(
-            `[ProjectileSystem] Fired ${config.spriteType} from ${config.from.toArray()} to target ${config.target.id}`
+            `[ProjectileSystem] Fired ${config.spriteType} from ${config.from.toArray()} to target ${config.target.id}`,
         );
+
+        return projectile.id;
+    }
+
+    private createProjectile(config: ProjectileConfigs): Projectile {
+        const sprite = this.createSpriteMesh(config.spriteType);
+
+        switch (config.spriteType) {
+            case "fireball":
+                return new TrailedProjectile(
+                    {
+                        from: config.from,
+                        target: config.target,
+                        damage: config.damage,
+                        speed: config.speed ?? 8,
+                        sprite: sprite,
+                    },
+                    {
+                        trailLength: 5,
+                        trailInterval: 0.06,
+                    },
+                    (target) => config.onAfterFinish(target),
+                );
+
+            default:
+                throw new Error(
+                    "Unknown projectile type: [" + config.spriteType + "]",
+                );
+        }
     }
 
     /**
      * Создает спрайт снаряда
      */
-    private createProjectileSprite(type: "fireball" | "arrow" | "magic"): THREE.Sprite {
+    private createSpriteMesh(type: string): THREE.Sprite {
         // Пытаемся загрузить из SpriteAssets
         let sprite: THREE.Sprite | null = null;
 
@@ -115,7 +112,7 @@ export class ProjectileSystem implements System {
                 const material = new THREE.SpriteMaterial({
                     map: texture,
                     transparent: true,
-                    blending: THREE.AdditiveBlending, // Свечение
+                    // blending: THREE.AdditiveBlending, // Свечение
                 });
                 sprite = new THREE.Sprite(material);
             }
@@ -123,7 +120,7 @@ export class ProjectileSystem implements System {
 
         // Fallback: создаем процедурный спрайт
         if (!sprite) {
-            sprite = this.createFallbackSprite(type);
+            sprite = this.createFallbackSpriteMesh(type);
         }
 
         return sprite;
@@ -132,7 +129,7 @@ export class ProjectileSystem implements System {
     /**
      * Создает fallback спрайт если текстура не загружена
      */
-    private createFallbackSprite(type: string): THREE.Sprite {
+    private createFallbackSpriteMesh(type: string): THREE.Sprite {
         const canvas = document.createElement("canvas");
         canvas.width = 64;
         canvas.height = 64;
@@ -165,24 +162,12 @@ export class ProjectileSystem implements System {
         projectile.onHit(projectile.target, projectile.damage);
 
         // Emit событие для визуальных эффектов
-        this.eventBus.emit("combat:projectile-hit", {
+        this.eventBus.emit(Effects.projectile_hit, {
             target: projectile.target,
             position: projectile.target.position,
             damage: projectile.damage,
+            id: projectile.id
         });
-
-        console.log(
-            `[ProjectileSystem] Projectile hit ${projectile.target.id} for ${projectile.damage} damage`
-        );
-    }
-
-    /**
-     * Коллбек при попадании снаряда (наносит урон)
-     */
-    private onProjectileHit(target: Unit, damage: number): void {
-        if (target.isAlive()) {
-            target.takeDamage(damage);
-        }
     }
 
     /**

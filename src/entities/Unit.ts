@@ -7,6 +7,7 @@ export class Unit extends Entity {
     worldPath: THREE.Vector3[] = [];
     selected = false;
     speed = 4;
+    canAttack = true;
 
     public healthPoints: number = 1;
     public maxHealthPoints: number = 1;

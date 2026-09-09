@@ -79,7 +79,7 @@ export class BoundsSystem implements System {
 
             if (this.action.target.getGridDistance(sniperGridPos) <= Player.interactionDistance) {
                 this.eventBus.emit(PlayerMovement.move_stop, {});
-                this.eventBus.emit(PlayerCombat.hit_targer, {target: this.action.target, sniper: sniper})
+                this.eventBus.emit(PlayerCombat.hit_target, {target: this.action.target, sniper: sniper})
                 this.action.run = false;
                 this.action.target = null;
             } else {

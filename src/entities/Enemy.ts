@@ -27,7 +27,7 @@ export class Enemy extends Unit {
             })
         }
 
-        model.userData = { type: "entity", entityId: id }
+        model.userData = { type: "enemy", entityId: id }
 
         return model;
     }

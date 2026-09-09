@@ -39,4 +39,10 @@ export class EntityManager {
     getAll(): Entity[] {
         return [...this.entities.values()];
     }
+
+    getEnemies(): Entity[]
+    {
+        const arr = this.getAll();
+        return arr.filter(entity => entity.mesh.userData.type == "enemy");
+    }
 }

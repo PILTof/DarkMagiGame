@@ -2,10 +2,15 @@ import * as THREE from "three";
 import type { Unit } from "../Unit.ts";
 import { Projectile, type ProjectileConfig } from "./Projectile.ts";
 
+export type TrailedProjectileConfig = {
+    trailLength?: number;
+    trailInterval?: number;
+};
+
 /**
  * Огненный шар с визуальным следом
  */
-export class FireballProjectile extends Projectile {
+export class TrailedProjectile extends Projectile {
     private readonly trail: THREE.Sprite[] = [];
     private readonly trailLength: number;
     private readonly trailInterval: number;
@@ -13,40 +18,33 @@ export class FireballProjectile extends Projectile {
 
     constructor(
         config: ProjectileConfig,
-        onHit: (target: Unit, damage: number) => void
+        additional: TrailedProjectileConfig,
+        onHit: (target: Unit, damage: number) => void,
     ) {
         super(config, onHit);
-        
-        this.trailLength = config.trailLength ?? 10;
-        this.trailInterval = config.trailInterval ?? 0.02;
+
+        this.trailLength = additional.trailLength ?? 10;
+        this.trailInterval = additional.trailInterval ?? 0.02;
     }
 
     /**
-     * Создает fallback спрайт для файрбола
+     * Обновляет базовую позицию (линейная интерполяция)
      */
-    protected static override createFallbackSprite(): THREE.Sprite {
-        const canvas = document.createElement("canvas");
-        canvas.width = 64;
-        canvas.height = 64;
-        const ctx = canvas.getContext("2d")!;
+    protected updateBasePosition(): void {
+        this.mesh.position.lerpVectors(
+            this.from,
+            this.target.position,
+            this.progress,
+        );
+    }
 
-        // Рисуем огненный шар
-        const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-        gradient.addColorStop(0, "#ffff00"); // Желтый центр
-        gradient.addColorStop(0.5, "#ff6600"); // Оранжевый
-        gradient.addColorStop(1, "rgba(255, 0, 0, 0)"); // Прозрачный красный
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 64, 64);
-
-        const texture = new THREE.CanvasTexture(canvas);
-        const material = new THREE.SpriteMaterial({
-            map: texture,
-            transparent: true,
-            blending: THREE.AdditiveBlending, // Свечение
-        });
-
-        return new THREE.Sprite(material);
+    /**
+     * Обновляет прогресс движения
+     */
+    protected updateProgress(dt: number): boolean {
+        const progressDelta = (this.speed / this.distance) * dt;
+        this.progress += progressDelta;
+        return this.progress >= 1.0;
     }
 
     /**
@@ -101,11 +99,11 @@ export class FireballProjectile extends Projectile {
         const trailSprite = this.mesh.clone();
         trailSprite.position.copy(this.mesh.position);
         trailSprite.scale.multiplyScalar(0.7); // Немного меньше
-        
+
         // Сохраняем начальную непрозрачность
         trailSprite.userData.opacity = 1.0;
         trailSprite.userData.age = 0;
-        
+
         scene.add(trailSprite);
         this.trail.push(trailSprite);
     }
@@ -117,7 +115,10 @@ export class FireballProjectile extends Projectile {
         for (const particle of this.trail) {
             particle.userData.age += dt;
             const lifetime = 0.5; // Секунды до полного исчезновения
-            particle.userData.opacity = Math.max(0, 1 - particle.userData.age / lifetime);
+            particle.userData.opacity = Math.max(
+                0,
+                1 - particle.userData.age / lifetime,
+            );
             particle.material.opacity = particle.userData.opacity;
         }
     }

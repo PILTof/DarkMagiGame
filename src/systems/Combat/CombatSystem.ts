@@ -9,7 +9,7 @@ import { Unit } from "../../entities/Unit";
 import { PlayerCombat } from "../contracts/EventNamesInterface";
 import type { HitTarget } from "../DTOs/HitTarget";
 import type { System } from "../System";
-import { AOEAttack } from "./CombatTypes/AOEAttack";
+import { DistanceAttack } from "./CombatTypes/AOEAttack";
 
 export class CombatSystem implements System {
     private readonly scene: Scene;
@@ -22,8 +22,8 @@ export class CombatSystem implements System {
     }
 
     private setEvents(): void {
-        EventBus.getInstance().on(PlayerCombat.hit_target, (e) =>
-            this.onHitTarget(e.sniper, e.target),
+        EventBus.getInstance().on(PlayerCombat.click_target, (e) =>
+            this.onClickTarget(e.sniper, e.target),
         );
 
         EventBus.getInstance().on(PlayerCombat.cast_spell, (e) => {});
@@ -39,7 +39,7 @@ export class CombatSystem implements System {
             });
     }
 
-    private async onHitTarget(sniper: Unit, target: HitTarget): Promise<void> {
+    private async onClickTarget(sniper: Unit, target: HitTarget): Promise<void> {
         const unit = target.entity;
         if (unit instanceof Enemy) {
             const modifiers = target.getBoundModifiers();
@@ -47,23 +47,16 @@ export class CombatSystem implements System {
                 ? modifiers.health_points * 6
                 : 6;
 
-            // const payload = await new DistanceAttack('fireball').run(
-            //     {
-            //         sniper: sniper,
-            //         target: unit,
-            //         damage: damage,
-            //         spriteType: "fireball",
-            //     },
-            // );
-            const animation = this.projectileManager.runProjectile(
-                new FireballProjectile(sniper, unit),
-            );
-            
-            const payload = await new AOEAttack("donut").run({
+            if (!sniper.combatIsLocked('fireball'))  {
+                this.projectileManager.runProjectile(
+                    new FireballProjectile(sniper, unit)
+                );
+            }
+
+            const payload = await new DistanceAttack("fireball").run({
                 sniper: sniper,
                 target: unit,
-                damage: damage,
-                spriteType: "donut",
+                damage: damage
             });
             payload?.target.takeDamage(damage);
         }

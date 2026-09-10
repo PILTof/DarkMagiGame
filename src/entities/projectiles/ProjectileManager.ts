@@ -22,7 +22,15 @@ export class ProjectileManager {
         this.scene = scene;
     }
 
+    /**
+     * Время жизни ограничено классом сущности проджетайла
+     * @param sprite 
+     */
     public runProjectile(sprite: SpriteEntity): void {
-        EntityManager.getInstance().add(sprite, this.scene)
+        EntityManager.getInstance().add(sprite, this.scene);
+
+        sprite.getProgress().then(() => {
+            EntityManager.getInstance().remove(sprite.id, this.scene);
+        });
     }
 }

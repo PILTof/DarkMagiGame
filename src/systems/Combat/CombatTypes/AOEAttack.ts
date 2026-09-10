@@ -2,19 +2,18 @@ import type { Vector3 } from "three";
 import type { Unit } from "../../../entities/Unit";
 import { Attack } from "../Attack";
 
-export type AOEAttackConfig = {
+export type DistanceAttackConfig = {
     sniper: Unit;
     target: Unit;
     damage: number;
-    spriteType: string;
 };
 
-export class AOEAttack extends Attack {
+export class DistanceAttack extends Attack {
     constructor(combatId: string ) {
         super(combatId);
     }
 
-    public async run(config: AOEAttackConfig): Promise<{
+    public async run(config: DistanceAttackConfig): Promise<{
         target: Unit;
         position: Vector3;
         damage: number;

@@ -1,5 +1,5 @@
 export const PlayerCombat = {
-    hit_target: "player:hit_targer",
+    click_target: "player:hit_targer",
     cast_spell: "player:cast_spell",
     dodge: "player:dodge",
 };

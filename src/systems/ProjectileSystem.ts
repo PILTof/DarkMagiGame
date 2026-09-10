@@ -1,8 +1,7 @@
 import * as THREE from "three";
 import type { EventBus } from "../core/EventBus.ts";
-import type {
-    Projectile
-} from "../entities/Projectiles/Projectile.ts";
+import { DonutProjectile } from "../entities/Projectiles/DonutProjectile.ts";
+import type { Projectile } from "../entities/Projectiles/Projectile.ts";
 import { TrailedProjectile } from "../entities/Projectiles/TrailedProjectile.ts";
 import type { SpriteAssets } from "../entities/SpriteAssets.ts";
 import type { System } from "./System.ts";
@@ -91,6 +90,18 @@ export class ProjectileSystem implements System {
                     (target) => config.onAfterFinish(target),
                 );
 
+            case "donut":
+                return new DonutProjectile(
+                    {
+                        ...config,
+                        sprite: sprite,
+                    },
+                    {
+                        liveTime: 3,
+                    },
+                    (target) => config.onAfterFinish(target),
+                );
+
             default:
                 throw new Error(
                     "Unknown projectile type: [" + config.spriteType + "]",
@@ -166,7 +177,7 @@ export class ProjectileSystem implements System {
             target: projectile.target,
             position: projectile.target.position,
             damage: projectile.damage,
-            id: projectile.id
+            id: projectile.id,
         });
     }
 

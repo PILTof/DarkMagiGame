@@ -5,14 +5,15 @@ import { Effects } from "../../contracts/EventNamesInterface";
 import type { ProjectileSystem } from "../../ProjectileSystem";
 import { Attack } from "../Attack";
 
-export type DistanceAttackConfig = {
+export type AOEAttackConfig = {
     sniper: Unit;
     target: Unit;
     damage: number;
     spriteType: string;
 };
 
-export class DistanceAttack extends Attack {
+export class AOEAttack extends Attack {
+    protected combatId: string = "";
     private readonly projectileSystem: ProjectileSystem;
 
     constructor(combatId: string, projectileSystem: ProjectileSystem) {
@@ -24,7 +25,7 @@ export class DistanceAttack extends Attack {
         });
     }
 
-    public async run(config: DistanceAttackConfig): Promise<{
+    public async run(config: AOEAttackConfig): Promise<{
         target: Unit;
         position: Vector3;
         damage: number;
@@ -38,25 +39,18 @@ export class DistanceAttack extends Attack {
 
         setTimeout(() => {
             config.sniper.unlockCombat(this.combatId);
-        }, 0.7 * 1000);
+        }, 1 * 1000);
 
-        switch (config.spriteType) {
-            case "fireball":
-                this.projectileSystem.execute({
-                    from: config.sniper.position.clone(),
-                    target: config.target,
-                    damage: config.damage,
-                    speed: 5,
-                    spriteType: "fireball",
-                    onAfterFinish: (unit) => {
-                        // make some another sprite effect
-                    },
-                });
-                break;
-
-            default:
-                throw new Error("Не указан sprite type");
-        }
+        this.projectileSystem.execute({
+            from: config.sniper.position.clone(),
+            target: config.target,
+            damage: config.damage,
+            speed: 5,
+            spriteType: "donut",
+            onAfterFinish: (unit) => {
+                // make some another sprite effect
+            },
+        });
 
         return this.promise;
     }

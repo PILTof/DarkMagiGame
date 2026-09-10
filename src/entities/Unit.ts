@@ -9,16 +9,32 @@ export class Unit extends Entity {
     speed = 4;
     canAttack = true;
 
+    private lockedCombat: Record<string, boolean> = {};
+
     public healthPoints: number = 1;
     public maxHealthPoints: number = 1;
-    
+
     private healthBar: HealthBar | null = null;
 
     constructor(id: string, gridPos: GridPos, mesh: THREE.Group) {
         super(id, gridPos, mesh);
-        
+
         // Создаем и добавляем HP бар
         this.createHealthBar();
+    }
+
+    public combatIsLocked(id: string): boolean {
+        return this.lockedCombat[id] === true;
+    }
+
+    public lockCombat (id: string): void
+    {
+        this.lockedCombat[id] = true;
+    }
+
+    public unlockCombat(id: string): void
+    {
+        this.lockedCombat[id] = false;
     }
 
     /**
@@ -30,10 +46,10 @@ export class Unit extends Entity {
             height: 0.12,
             offsetY: 1.2, // Высота над юнитом
         });
-        
+
         // Добавляем HP бар к mesh юнита
         this.mesh.add(this.healthBar.getSprite());
-        
+
         // Обновляем начальное состояние
         this.updateHealthBar();
     }
@@ -43,7 +59,10 @@ export class Unit extends Entity {
      */
     public updateHealthBar(): void {
         if (this.healthBar) {
-            this.healthBar.updateHealth(this.healthPoints, this.maxHealthPoints);
+            this.healthBar.updateHealth(
+                this.healthPoints,
+                this.maxHealthPoints,
+            );
         }
     }
 
@@ -54,7 +73,10 @@ export class Unit extends Entity {
         if (max !== undefined) {
             this.maxHealthPoints = max;
         }
-        this.healthPoints = Math.max(0, Math.min(current, this.maxHealthPoints));
+        this.healthPoints = Math.max(
+            0,
+            Math.min(current, this.maxHealthPoints),
+        );
         this.updateHealthBar();
     }
 
@@ -70,7 +92,10 @@ export class Unit extends Entity {
      * Лечит юнита
      */
     public heal(amount: number): void {
-        this.healthPoints = Math.min(this.maxHealthPoints, this.healthPoints + amount);
+        this.healthPoints = Math.min(
+            this.maxHealthPoints,
+            this.healthPoints + amount,
+        );
         this.updateHealthBar();
     }
 
@@ -102,7 +127,7 @@ export class Unit extends Entity {
     hasPath(): boolean {
         return this.worldPath.length > 0;
     }
-    
+
     /**
      * Освобождает ресурсы
      */
@@ -112,4 +137,3 @@ export class Unit extends Entity {
         }
     }
 }
-

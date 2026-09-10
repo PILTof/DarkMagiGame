@@ -8,7 +8,7 @@ import { PlayerCombat } from "../contracts/EventNamesInterface";
 import type { HitTarget } from "../DTOs/HitTarget";
 import type { ProjectileSystem } from "../ProjectileSystem";
 import type { System } from "../System";
-import { DistanceAttack } from "./CombatTypes/DistanceAttack";
+import { AOEAttack } from "./CombatTypes/AOEAttack";
 
 export class CombatSystem implements System {
     private readonly scene: Scene;
@@ -46,16 +46,24 @@ export class CombatSystem implements System {
                 ? modifiers.health_points * 6
                 : 6;
 
-            const payload = await new DistanceAttack(this.projectileSystem).run(
+            // const payload = await new DistanceAttack('fireball', this.projectileSystem).run(
+            //     {
+            //         sniper: sniper,
+            //         target: unit,
+            //         damage: damage,
+            //         spriteType: "fireball",
+            //     },
+            // );
+            const payload = await new AOEAttack('donut', this.projectileSystem).run(
                 {
                     sniper: sniper,
                     target: unit,
                     damage: damage,
-                    spriteType: "fireball",
-                },
-            );
+                    spriteType: 'donut'
+                }
+            )
 
-            payload.target.takeDamage(damage);
+            payload?.target.takeDamage(damage);
         }
     }
 

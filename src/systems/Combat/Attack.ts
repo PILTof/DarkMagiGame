@@ -10,10 +10,15 @@ export abstract class Attack {
     }>;
     protected resolve: Function;
 
-    constructor() {
+    protected combatId: string;
+
+    constructor(combatId: string) {
+        this.combatId = combatId;
         this.resolve = () => {};
         this.promise = new Promise((resolve) => {
             this.resolve = resolve;
         });
     }
+
+    public abstract run(config: {}): Promise<any> | null;
 }

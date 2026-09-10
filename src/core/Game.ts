@@ -100,6 +100,7 @@ export class Game {
       new BoundsSystem(this.tileMap, this.eventBus, this.engine, this.camera),
       new CombatSystem(
         this.engine.scene, 
+        this.tileMap
       ),
     ];
 

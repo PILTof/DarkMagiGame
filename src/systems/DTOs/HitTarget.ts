@@ -19,7 +19,7 @@ export class HitTarget {
         return EntityManager.getInstance().get(this.entityId);
     }
 
-    get gridPos(): GridPos | undefined {
+    get entityGridPos(): GridPos | undefined {
         return this.entity?.gridPos;
     }
 
@@ -38,7 +38,7 @@ export class HitTarget {
     }
 
     getGridDistance(from: GridPos): number {
-        if (!this.gridPos) {
+        if (!this.entityGridPos) {
             throw new Error("Grid coordinated is undefined");
         }
         if (!this.entity) {

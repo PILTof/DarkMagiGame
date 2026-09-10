@@ -6,6 +6,7 @@ import { EntityManager } from "../../entities/EntityManager";
 import { FireballProjectile } from "../../entities/projectiles/FireballProjectile";
 import { ProjectileManager } from "../../entities/projectiles/ProjectileManager";
 import { Unit } from "../../entities/Unit";
+import type { TileMap } from "../../world/TileMap";
 import { PlayerCombat } from "../contracts/EventNamesInterface";
 import type { HitTarget } from "../DTOs/HitTarget";
 import type { System } from "../System";
@@ -13,10 +14,12 @@ import { DistanceAttack } from "./CombatTypes/DistanceAttack";
 
 export class CombatSystem implements System {
     private readonly scene: Scene;
+    private readonly tileMap: TileMap;
     private readonly projectileManager: ProjectileManager;
 
-    constructor(scene: Scene) {
+    constructor(scene: Scene, tileMap: TileMap) {
         this.scene = scene;
+        this.tileMap = tileMap;
         this.projectileManager = ProjectileManager.getInstance(scene);
         this.setEvents();
     }
@@ -39,7 +42,10 @@ export class CombatSystem implements System {
             });
     }
 
-    private async onClickTarget(sniper: Unit, target: HitTarget): Promise<void> {
+    private async onClickTarget(
+        sniper: Unit,
+        target: HitTarget,
+    ): Promise<void> {
         const unit = target.entity;
         if (unit instanceof Enemy) {
             const modifiers = target.getBoundModifiers();
@@ -47,18 +53,18 @@ export class CombatSystem implements System {
                 ? modifiers.health_points * 6
                 : 6;
 
-            if (!sniper.combatIsLocked('fireball'))  {
+            if (!sniper.combatIsLocked("fireball")) {
                 this.projectileManager.runProjectile(
-                    new FireballProjectile(sniper, unit)
+                    new FireballProjectile(sniper, unit),
                 );
             }
-
+            
             const payload = await new DistanceAttack("fireball").run({
                 sniper: sniper,
                 target: unit,
                 damage: damage
             });
-            payload?.target.takeDamage(damage);
+            payload?.target.takeDamage(payload.damage);
         }
     }
 

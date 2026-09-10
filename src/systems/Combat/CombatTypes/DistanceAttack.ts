@@ -2,7 +2,6 @@ import type { Vector3 } from "three";
 import { EventBus } from "../../../core/EventBus";
 import type { Unit } from "../../../entities/Unit";
 import { Effects } from "../../contracts/EventNamesInterface";
-import type { ProjectileSystem } from "../../ProjectileSystem";
 import { Attack } from "../Attack";
 
 export type DistanceAttackConfig = {
@@ -13,11 +12,9 @@ export type DistanceAttackConfig = {
 };
 
 export class DistanceAttack extends Attack {
-    private readonly projectileSystem: ProjectileSystem;
 
-    constructor(combatId: string, projectileSystem: ProjectileSystem) {
+    constructor(combatId: string) {
         super(combatId);
-        this.projectileSystem = projectileSystem;
 
         EventBus.getInstance().on(Effects.projectile_hit, (payload) => {
             this.resolve(payload);
@@ -38,25 +35,8 @@ export class DistanceAttack extends Attack {
 
         setTimeout(() => {
             config.sniper.unlockCombat(this.combatId);
+            EventBus.getInstance().emit(Effects.projectile_hit);
         }, 0.7 * 1000);
-
-        switch (config.spriteType) {
-            case "fireball":
-                this.projectileSystem.execute({
-                    from: config.sniper.position.clone(),
-                    target: config.target,
-                    damage: config.damage,
-                    speed: 5,
-                    spriteType: "fireball",
-                    onAfterFinish: (unit) => {
-                        // make some another sprite effect
-                    },
-                });
-                break;
-
-            default:
-                throw new Error("Не указан sprite type");
-        }
 
         return this.promise;
     }

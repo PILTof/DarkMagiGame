@@ -1,6 +1,7 @@
 import type * as THREE from "three";
 import type { Entity } from "./Entity.ts";
 import { Player, PLAYER_ID } from "./Player.ts";
+import { SpriteEntity } from "./SpriteEntity.ts";
 
 export class EntityManager {
     private static instance: EntityManager | undefined;
@@ -40,9 +41,15 @@ export class EntityManager {
         return [...this.entities.values()];
     }
 
-    getEnemies(): Entity[]
-    {
+    getEnemies(): Entity[] {
         const arr = this.getAll();
-        return arr.filter(entity => entity.mesh.userData.type == "enemy");
+        return arr.filter((entity) => entity.mesh.userData.type == "enemy");
+    }
+
+    getProjectiles(): SpriteEntity[] {
+        const arr = this.getAll();
+        return arr.filter(
+            (spriteEntity) => spriteEntity instanceof SpriteEntity,
+        );
     }
 }

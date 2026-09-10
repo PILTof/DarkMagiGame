@@ -3,20 +3,21 @@ import { EventBus } from "../../core/EventBus";
 import { Enemy } from "../../entities/Enemy";
 import type { Entity } from "../../entities/Entity";
 import { EntityManager } from "../../entities/EntityManager";
+import { FireballProjectile } from "../../entities/projectiles/FireballProjectile";
+import { ProjectileManager } from "../../entities/projectiles/ProjectileManager";
 import { Unit } from "../../entities/Unit";
 import { PlayerCombat } from "../contracts/EventNamesInterface";
 import type { HitTarget } from "../DTOs/HitTarget";
-import type { ProjectileSystem } from "../ProjectileSystem";
 import type { System } from "../System";
 import { AOEAttack } from "./CombatTypes/AOEAttack";
 
 export class CombatSystem implements System {
     private readonly scene: Scene;
-    private readonly projectileSystem: ProjectileSystem;
+    private readonly projectileManager: ProjectileManager;
 
-    constructor(scene: Scene, projectileSystem: ProjectileSystem) {
+    constructor(scene: Scene) {
         this.scene = scene;
-        this.projectileSystem = projectileSystem;
+        this.projectileManager = ProjectileManager.getInstance(scene);
         this.setEvents();
     }
 
@@ -46,7 +47,7 @@ export class CombatSystem implements System {
                 ? modifiers.health_points * 6
                 : 6;
 
-            // const payload = await new DistanceAttack('fireball', this.projectileSystem).run(
+            // const payload = await new DistanceAttack('fireball').run(
             //     {
             //         sniper: sniper,
             //         target: unit,
@@ -54,15 +55,16 @@ export class CombatSystem implements System {
             //         spriteType: "fireball",
             //     },
             // );
-            const payload = await new AOEAttack('donut', this.projectileSystem).run(
-                {
-                    sniper: sniper,
-                    target: unit,
-                    damage: damage,
-                    spriteType: 'donut'
-                }
-            )
-
+            const animation = this.projectileManager.runProjectile(
+                new FireballProjectile(sniper, unit),
+            );
+            
+            const payload = await new AOEAttack("donut").run({
+                sniper: sniper,
+                target: unit,
+                damage: damage,
+                spriteType: "donut",
+            });
             payload?.target.takeDamage(damage);
         }
     }

@@ -1,8 +1,5 @@
 import type { Vector3 } from "three";
-import { EventBus } from "../../../core/EventBus";
 import type { Unit } from "../../../entities/Unit";
-import { Effects } from "../../contracts/EventNamesInterface";
-import type { ProjectileSystem } from "../../ProjectileSystem";
 import { Attack } from "../Attack";
 
 export type AOEAttackConfig = {
@@ -13,16 +10,8 @@ export type AOEAttackConfig = {
 };
 
 export class AOEAttack extends Attack {
-    protected combatId: string = "";
-    private readonly projectileSystem: ProjectileSystem;
-
-    constructor(combatId: string, projectileSystem: ProjectileSystem) {
+    constructor(combatId: string ) {
         super(combatId);
-        this.projectileSystem = projectileSystem;
-
-        EventBus.getInstance().on(Effects.projectile_hit, (payload) => {
-            this.resolve(payload);
-        });
     }
 
     public async run(config: AOEAttackConfig): Promise<{
@@ -31,6 +20,7 @@ export class AOEAttack extends Attack {
         damage: number;
         id: string;
     } | null> {
+
         if (config.sniper.combatIsLocked(this.combatId)) {
             return null;
         }
@@ -39,18 +29,13 @@ export class AOEAttack extends Attack {
 
         setTimeout(() => {
             config.sniper.unlockCombat(this.combatId);
-        }, 1 * 1000);
-
-        this.projectileSystem.execute({
-            from: config.sniper.position.clone(),
-            target: config.target,
-            damage: config.damage,
-            speed: 5,
-            spriteType: "donut",
-            onAfterFinish: (unit) => {
-                // make some another sprite effect
-            },
-        });
+            this.resolve({
+                target: config.target,
+                position: config.sniper.position,
+                damage: config.damage,
+                id: this.combatId
+            })
+        }, 1000);
 
         return this.promise;
     }

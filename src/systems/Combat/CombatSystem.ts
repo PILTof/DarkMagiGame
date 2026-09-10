@@ -9,7 +9,7 @@ import { Unit } from "../../entities/Unit";
 import { PlayerCombat } from "../contracts/EventNamesInterface";
 import type { HitTarget } from "../DTOs/HitTarget";
 import type { System } from "../System";
-import { DistanceAttack } from "./CombatTypes/AOEAttack";
+import { DistanceAttack } from "./CombatTypes/DistanceAttack";
 
 export class CombatSystem implements System {
     private readonly scene: Scene;

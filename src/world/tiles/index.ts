@@ -12,6 +12,8 @@ export function createTile(type: string, pos: GridPos): Tile {
       return new DirtTile(pos);
     case "water":
       return new WaterTile(pos);
+    default:
+      throw new Error(`Unknown tile type: ${type}`);
   }
 }
 

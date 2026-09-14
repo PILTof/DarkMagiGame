@@ -6,7 +6,7 @@ export class UnitBoundsTile extends Tile {
     readonly type: string = "bound";
     readonly walkable: boolean = true;
 
-    protected async createMesh(assets: TileAssets): Promise<Object3D> {
+    protected async createMesh(_assets: TileAssets): Promise<Object3D> {
         return this.buildProceduralMesh();
     }
 
@@ -15,7 +15,7 @@ export class UnitBoundsTile extends Tile {
             roughness: 0.85,
             metalness: 0,
             height: 0.2,
-            color: 'aqua'
+            color: 0x00ffff
         };
     }
 }

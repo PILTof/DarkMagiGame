@@ -27,7 +27,7 @@ export class MovementSystem implements System {
         this.tileMap = tileMap;
         this.eventBus = eventBus;
         this.player = entityManager.getPlayer();
-        this.eventBus.on(PlayerMovement.move_stop, (e) => this.onPlayerStopped(e));
+        this.eventBus.on(PlayerMovement.move_stop, () => this.onPlayerStopped());
         this.eventBus.on(PlayerMovement.move_to, (payload) => {
             this.onPlayerMoveTo(payload);
         });
@@ -128,7 +128,7 @@ export class MovementSystem implements System {
     }
 
     /** Останавливает движение игрока */
-    private onPlayerStopped(event: unknown): void {
+    private onPlayerStopped(): void {
       this.player?.clearPath();
     }
 }

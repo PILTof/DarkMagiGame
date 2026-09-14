@@ -1,6 +1,4 @@
 import * as THREE from "three";
-import { env } from "../config/env.ts";
-import { EventBus } from "../core/EventBus.ts";
 import { GridCoords, type GridPos } from "./GridCoords.ts";
 import type { MapData, MapSpawn } from "./map/MapData.ts";
 import {
@@ -19,13 +17,11 @@ export class TileMap {
   private mapData: MapData | null = null;
   private mapWidth = 0;
   private mapHeight = 0;
-  private readonly eventBus: EventBus;
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
     this.scene.add(this.group);
     this.scene.add(this.objectsGroup);
-    this.eventBus = EventBus.getInstance();
   }
 
   async buildFromMap(
@@ -103,11 +99,6 @@ export class TileMap {
   ): Promise<void> {
     const { legend, rows } = mapData.terrain;
 
-    const outlineMaterial = new THREE.MeshToonMaterial({
-      color: "black",
-      wireframe: true,
-    });
-
     const loadTasks: Promise<void>[] = [];
 
     for (let r = 0; r < mapData.height; r++) {
@@ -130,10 +121,6 @@ export class TileMap {
           tile.loadMesh(tileAssets).then((root) => {
             root.position.set(worldPos.x, 0, worldPos.z);
 
-            if (env.debug) {
-              // this.addOutline(root, outlineMaterial);
-            }
-
             this.group.add(root);
           }),
         );
@@ -143,18 +130,6 @@ export class TileMap {
     }
 
     await Promise.all(loadTasks);
-  }
-
-  private addOutline(
-    root: THREE.Object3D,
-    outlineMaterial: THREE.MeshToonMaterial,
-  ): void {
-    root.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.geometry) {
-        const outlineMesh = new THREE.Mesh(child.geometry, outlineMaterial);
-        child.add(outlineMesh);
-      }
-    });
   }
 
   private async buildObjects(

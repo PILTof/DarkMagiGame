@@ -6,7 +6,8 @@ import type { IsometricCamera } from "../engine/IsometricCamera";
 import type { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
 import { Player } from "../entities/Player";
-import { GridCoords } from "../world/GridCoords";
+import type { Unit } from "../entities/Unit";
+import { GridCoords, type GridPos } from "../world/GridCoords";
 import { TileMap } from "../world/TileMap";
 import { UnitBoundsTile } from "../world/tiles/UnitBoundsTile";
 import { HitTarget } from "./DTOs/HitTarget";
@@ -65,6 +66,18 @@ export class BoundsSystem implements System {
         });
     }
 
+    public getBoundAtGrid(unit: Unit, grid: GridPos): HitTarget | null {
+        let result: HitTarget | null = null;
+        unit.mesh.traverse((object) => {
+            if (result || object.userData.isBound !== true) return;
+            const boundGrid = object.userData.grid as GridPos | undefined;
+            if (boundGrid?.q === grid.q && boundGrid.r === grid.r) {
+                result = new HitTarget(object);
+            }
+        });
+        return result;
+    }
+
     private checkHit(sniper: Entity) {
         // Сначала проверяем клик на баунд врага
         if (this.action.target) {
@@ -90,7 +103,7 @@ export class BoundsSystem implements System {
         }
     }
 
-    update(dt: number): void {
+    update(_dt: number): void {
         if (this.action.run && this.action.target) {
             this.checkHit(this.player);
         }
@@ -156,13 +169,12 @@ export class BoundsSystem implements System {
         neighborTiles.forEach((tile) => {
             const {
                 x: wx,
-                y: wy,
                 z: wz,
             } = this.tileMap.gridToWorldPosition(tile.q, tile.r);
             const lx = entity.position.x - wx;
             const lz = entity.position.z - wz;
 
-            this.makeBound(lx, this.boundYPos, lz, entity).then((mesh) => {
+            this.makeBound(lx, this.boundYPos, lz, entity, tile).then((mesh) => {
                 mesh.userData.modifiers = {
                     health_points: 5,
                 };
@@ -170,7 +182,7 @@ export class BoundsSystem implements System {
             });
         });
 
-        this.makeBound(0, this.boundYPos, 0, entity).then((mesh) => {
+        this.makeBound(0, this.boundYPos, 0, entity, currentGrid).then((mesh) => {
             mesh.userData.modifiers = {
                 health_points: 10,
             };
@@ -191,6 +203,7 @@ export class BoundsSystem implements System {
         y: number,
         z: number,
         entity: Entity,
+        grid: GridPos,
     ): Promise<Object3D> {
         const bound = new UnitBoundsTile({ q: 0, r: 0 });
         const mesh = await bound.loadMesh();
@@ -200,6 +213,7 @@ export class BoundsSystem implements System {
         mesh.userData = {
             type: "bound",
             entityId: entity.id,
+            grid,
             isBound: true,
         };
 

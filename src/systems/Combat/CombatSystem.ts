@@ -6,7 +6,6 @@ import { EntityManager } from "../../entities/EntityManager";
 import { FireballProjectile } from "../../entities/projectiles/FireballProjectile";
 import { ProjectileManager } from "../../entities/projectiles/ProjectileManager";
 import { Unit } from "../../entities/Unit";
-import type { TileMap } from "../../world/TileMap";
 import { PlayerCombat } from "../contracts/EventNamesInterface";
 import type { HitTarget } from "../DTOs/HitTarget";
 import type { System } from "../System";
@@ -14,12 +13,10 @@ import { DistanceAttack } from "./CombatTypes/DistanceAttack";
 
 export class CombatSystem implements System {
     private readonly scene: Scene;
-    private readonly tileMap: TileMap;
     private readonly projectileManager: ProjectileManager;
 
-    constructor(scene: Scene, tileMap: TileMap) {
+    constructor(scene: Scene) {
         this.scene = scene;
-        this.tileMap = tileMap;
         this.projectileManager = ProjectileManager.getInstance(scene);
         this.setEvents();
     }
@@ -34,7 +31,7 @@ export class CombatSystem implements System {
         EventBus.getInstance().on(PlayerCombat.dodge, (e) => {});
     }
 
-    update(dt: number): void {
+    update(_dt: number): void {
         EntityManager.getInstance()
             .getAll()
             .forEach((entity) => {

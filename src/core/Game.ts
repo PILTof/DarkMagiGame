@@ -13,11 +13,14 @@ import { SpriteAssets } from "../entities/SpriteAssets.ts";
 import { PointerHandler } from "../input/PointerHandler.ts";
 import { AnimationSystem } from "../systems/AnimationSystem.ts";
 import { BoundsSystem } from "../systems/BoundsSystem.ts";
+import { CastSystem } from "../systems/CastSystem.ts";
 import { CombatSystem } from "../systems/Combat/CombatSystem.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
 import { MovementSystem } from "../systems/MovementSystem.ts";
 import { SelectionSystem } from "../systems/SelectionSystem.ts";
 import type { System } from "../systems/System.ts";
+import { TileInteractionSystem } from "../systems/TileInteractionSystem.ts";
+import { TileVisualSystem } from "../systems/TileVisualSystem.ts";
 import { MapLoader } from "../world/map/index.ts";
 import { MapObjectAssets } from "../world/map/objects/index.ts";
 import { PathfindingService } from "../world/PathfindingService.ts";
@@ -92,16 +95,23 @@ export class Game {
 
     // Создаем ProjectileSystem отдельно, чтобы передать её в CombatSystem
 
+    const boundsSystem = new BoundsSystem(
+      this.tileMap,
+      this.eventBus,
+      this.engine,
+      this.camera,
+    );
+
     this.systems = [
       new InputSystem(this.engine, this.camera, this.tileMap, entityManager, this.eventBus),
       new SelectionSystem(this.eventBus),
       new MovementSystem(entityManager, pathfinding, this.tileMap, this.eventBus),
+      new TileInteractionSystem(this.tileMap, this.eventBus),
+      new TileVisualSystem(this.tileMap, this.eventBus),
+      boundsSystem,
+      new CastSystem(this.engine.scene, this.tileMap, boundsSystem, this.eventBus),
       new AnimationSystem(),
-      new BoundsSystem(this.tileMap, this.eventBus, this.engine, this.camera),
-      new CombatSystem(
-        this.engine.scene, 
-        this.tileMap
-      ),
+      new CombatSystem(this.engine.scene),
     ];
 
     if (env.debug) {

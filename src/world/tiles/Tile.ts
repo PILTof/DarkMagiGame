@@ -4,6 +4,8 @@ import type { GridPos } from "../GridCoords.ts";
 import type { TileAssets } from "./TileAssets.ts";
 
 
+export type TileType = "grass" | "stone" | "water";
+
 export type TileVisualConfig = {
   color?: number;
   roughness: number;

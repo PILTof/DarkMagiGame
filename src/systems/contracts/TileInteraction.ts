@@ -18,6 +18,7 @@ export type TargetPreviewPayload = {
   target: TilePointerPayload | null;
   affectedCells: Array<{ q: number; r: number }>;
   isValid: boolean;
+  invalidReason?: string;
 };
 
 export type CastResolvedPayload = {

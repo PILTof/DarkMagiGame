@@ -4,7 +4,7 @@ import type { EventBus } from "../core/EventBus.ts";
 import { GridCoords, type GridPos } from "../world/GridCoords.ts";
 import type { TileMap } from "../world/TileMap.ts";
 import type { System } from "./System.ts";
-import { Effects, TileInteraction } from "./contracts/EventNamesInterface.ts";
+import { Effects, PlayerCombat, TileInteraction } from "./contracts/EventNamesInterface.ts";
 import type { TargetPreviewPayload } from "./contracts/TileInteraction.ts";
 
 type TimedEffect = { mesh: THREE.Mesh; remaining: number };
@@ -13,6 +13,8 @@ export class TileVisualSystem implements System {
   private readonly hover = this.createOverlay(0xff0000, 0.9);
   private readonly previewGroup = new THREE.Group();
   private readonly effects: TimedEffect[] = [];
+  private readonly rejectionMessage = this.createRejectionMessage();
+  private rejectionMessageTimeout: number | null = null;
 
   private readonly tileMap: TileMap;
 
@@ -30,6 +32,9 @@ export class TileVisualSystem implements System {
     eventBus.on(Effects.aoe_impact, (payload) => {
       const grid = (payload as { targetGrid: GridPos }).targetGrid;
       this.playImpact(grid);
+    });
+    eventBus.on(PlayerCombat.cast_rejected, (payload) => {
+      this.showRejectionMessage((payload as { reason: string }).reason);
     });
   }
 
@@ -90,6 +95,41 @@ export class TileVisualSystem implements System {
     this.positionAtGrid(effect, grid, 0.44);
     this.tileMap.group.add(effect);
     this.effects.push({ mesh: effect, remaining: 0.35 });
+  }
+
+  private showRejectionMessage(reason: string): void {
+    this.rejectionMessage.textContent = reason;
+    this.rejectionMessage.style.opacity = "1";
+    if (this.rejectionMessageTimeout !== null) {
+      window.clearTimeout(this.rejectionMessageTimeout);
+    }
+    this.rejectionMessageTimeout = window.setTimeout(() => {
+      this.rejectionMessage.style.opacity = "0";
+      this.rejectionMessageTimeout = null;
+    }, 1600);
+  }
+
+  private createRejectionMessage(): HTMLDivElement {
+    const message = document.createElement("div");
+    Object.assign(message.style, {
+      position: "fixed",
+      left: "50%",
+      bottom: "32px",
+      transform: "translateX(-50%)",
+      zIndex: "1000",
+      padding: "10px 16px",
+      border: "1px solid #ff4d4d",
+      borderRadius: "4px",
+      background: "rgba(65, 10, 10, 0.92)",
+      color: "#ffffff",
+      fontFamily: "monospace",
+      fontSize: "15px",
+      pointerEvents: "none",
+      opacity: "0",
+      transition: "opacity 120ms ease-out",
+    });
+    document.body.appendChild(message);
+    return message;
   }
 
   private positionAtGrid(mesh: THREE.Mesh, grid: GridPos, y = 0.025): void {

@@ -1,6 +1,6 @@
 import { calculateArmorReducedDamage } from "../combat/DamageCalculator.ts";
 import type { EventBus } from "../core/EventBus.ts";
-import { EntityManager } from "../entities/EntityManager.ts";
+import type { EntityManager } from "../entities/EntityManager.ts";
 import { Unit } from "../entities/Unit.ts";
 import { ARCANE_BURST } from "../skills/ArcaneBurst.ts";
 import { getHexRadiusAffectedCells } from "../skills/HexRadiusTargeting.ts";
@@ -15,15 +15,18 @@ export class CastSystem implements System {
   private readonly tileMap: TileMap;
   private readonly boundsSystem: BoundsSystem;
   private readonly eventBus: EventBus;
+  private readonly entityManager: EntityManager;
 
   constructor(
     tileMap: TileMap,
     boundsSystem: BoundsSystem,
     eventBus: EventBus,
+    entityManager: EntityManager,
   ) {
     this.tileMap = tileMap;
     this.boundsSystem = boundsSystem;
     this.eventBus = eventBus;
+    this.entityManager = entityManager;
     this.eventBus.on(PlayerCombat.cast_spell, (payload) => {
       this.cast(payload as CastRequest);
     });
@@ -32,7 +35,7 @@ export class CastSystem implements System {
   update(_dt: number): void {}
 
   private cast(request: CastRequest): void {
-    const caster = EntityManager.getInstance().get(request.casterId);
+    const caster = this.entityManager.get(request.casterId);
     if (!(caster instanceof Unit) || request.skillId !== ARCANE_BURST.id) {
       this.reject("invalid-skill", request);
       return;
@@ -55,7 +58,7 @@ export class CastSystem implements System {
     );
     const hits: CastResolvedPayload["hits"] = [];
 
-    for (const entity of EntityManager.getInstance().getAll()) {
+    for (const entity of this.entityManager.getAll()) {
       if (!(entity instanceof Unit) || entity.id === caster.id) continue;
 
       const boundHits = this.boundsSystem

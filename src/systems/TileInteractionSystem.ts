@@ -1,5 +1,5 @@
 import type { EventBus } from "../core/EventBus.ts";
-import { EntityManager } from "../entities/EntityManager.ts";
+import type { EntityManager } from "../entities/EntityManager.ts";
 import { ARCANE_BURST } from "../skills/ArcaneBurst.ts";
 import { getHexRadiusAffectedCells } from "../skills/HexRadiusTargeting.ts";
 import type { CastConditionContext, CastConditionResult } from "../skills/SkillDefinition.ts";
@@ -11,11 +11,17 @@ import type { CastRequest, TargetPreviewPayload, TilePointerPayload } from "./co
 export class TileInteractionSystem implements System {
   private readonly tileMap: TileMap;
   private readonly eventBus: EventBus;
+  private readonly entityManager: EntityManager;
   private targetingActive = false;
 
-  constructor(tileMap: TileMap, eventBus: EventBus) {
+  constructor(
+    tileMap: TileMap,
+    eventBus: EventBus,
+    entityManager: EntityManager,
+  ) {
     this.tileMap = tileMap;
     this.eventBus = eventBus;
+    this.entityManager = entityManager;
     this.eventBus.on(TileInteraction.pointer_move, (payload) => {
       this.onPointerMove(payload as TilePointerPayload | null);
     });
@@ -48,7 +54,7 @@ export class TileInteractionSystem implements System {
       return;
     }
 
-    const player = EntityManager.getInstance().getPlayer();
+    const player = this.entityManager.getPlayer();
     if (!player) return;
 
     const request: CastRequest = {
@@ -80,7 +86,7 @@ export class TileInteractionSystem implements System {
       return { isValid: false, reason: "Target tile does not exist." };
     }
 
-    const caster = EntityManager.getInstance().getPlayer();
+    const caster = this.entityManager.getPlayer();
     const context: CastConditionContext = {
       caster,
       target,

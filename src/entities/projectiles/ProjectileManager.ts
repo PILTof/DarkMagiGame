@@ -3,23 +3,12 @@ import { EntityManager } from "../EntityManager";
 import type { SpriteEntity } from "../SpriteEntity";
 
 export class ProjectileManager {
-    private static instance: ProjectileManager | undefined;
+    private readonly scene: Scene;
+    private readonly entityManager: EntityManager;
 
-    public static getInstance(scene: Scene): ProjectileManager {
-        if (!ProjectileManager.instance) {
-            ProjectileManager.instance = new ProjectileManager(scene);
-        }
-        return ProjectileManager.instance;
-    }
-
-    private scene: Scene;
-
-    constructor(scene: Scene) {
+    constructor(scene: Scene, entityManager: EntityManager) {
         this.scene = scene;
-    }
-
-    public setScene(scene: Scene): void {
-        this.scene = scene;
+        this.entityManager = entityManager;
     }
 
     /**
@@ -27,10 +16,10 @@ export class ProjectileManager {
      * @param sprite 
      */
     public runProjectile(sprite: SpriteEntity): void {
-        EntityManager.getInstance().add(sprite, this.scene);
+        this.entityManager.add(sprite, this.scene);
 
         sprite.getProgress().then(() => {
-            EntityManager.getInstance().remove(sprite.id, this.scene);
+            this.entityManager.remove(sprite.id, this.scene);
         });
     }
 }

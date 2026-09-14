@@ -1,16 +1,16 @@
 import "./style.css";
-import { Game } from "./core/Game.ts";
+import { createGameSession } from "./app/createGameSession.ts";
 
 const container = document.getElementById("app");
 if (!container) {
   throw new Error("Container #app not found");
 }
 
-const game = new Game(container);
+const session = createGameSession(container);
 
 try {
-  await game.load();
-  game.start();
+  await session.load();
+  session.start();
 } catch (error) {
   console.error("Failed to start game:", error);
 }

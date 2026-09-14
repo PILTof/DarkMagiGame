@@ -28,7 +28,8 @@ export class BoundsSystem implements System {
     private readonly pointer = new THREE.Vector2();
     private readonly engine: Engine;
     private readonly camera: IsometricCamera;
-    private readonly player: Entity | any;
+    private readonly entityManager: EntityManager;
+    private readonly player: Player | undefined;
 
     public action: {
         target: HitTarget | null;
@@ -43,14 +44,16 @@ export class BoundsSystem implements System {
         eventBus: EventBus,
         engine: Engine,
         camera: IsometricCamera,
+        entityManager: EntityManager,
     ) {
         this.tileMap = tileMap;
         this.eventBus = eventBus;
         this.engine = engine;
         this.camera = camera;
+        this.entityManager = entityManager;
 
         
-        this.player = EntityManager.getInstance().getPlayer();
+        this.player = this.entityManager.getPlayer();
 
         if (this.player) {
             this.eventBus.on(PlayerCombat.target_requested, (payload) => {
@@ -62,7 +65,7 @@ export class BoundsSystem implements System {
         }
 
 
-        EntityManager.getInstance().getAll().forEach((entity) => {
+        this.entityManager.getAll().forEach((entity) => {
             this.drawBounds(entity);
         });
     }
@@ -81,7 +84,7 @@ export class BoundsSystem implements System {
             if (object.userData.isBound !== true) return;
             const boundGrid = object.userData.grid as GridPos | undefined;
             if (boundGrid && gridKeys.has(this.getGridKey(boundGrid))) {
-                bounds.push(new HitTarget(object));
+                bounds.push(new HitTarget(object, this.entityManager));
             }
         });
 
@@ -103,6 +106,7 @@ export class BoundsSystem implements System {
             return;
         }
 
+        if (!this.player) return;
         this.action.target = enemyBound;
         this.action.run = true;
         this.checkHit(this.player);
@@ -124,7 +128,7 @@ export class BoundsSystem implements System {
         }
     }
 
-    private checkHit(sniper: Entity) {
+    private checkHit(sniper: Player) {
         // Сначала проверяем клик на баунд врага
         if (this.action.target) {
             const sniperGridPos = this.tileMap.worldToGrid(sniper.position);
@@ -150,7 +154,7 @@ export class BoundsSystem implements System {
     }
 
     update(_dt: number): void {
-        if (this.action.run && this.action.target) {
+        if (this.action.run && this.action.target && this.player) {
             this.checkHit(this.player);
         }
     }
@@ -168,7 +172,7 @@ export class BoundsSystem implements System {
         this.raycaster.setFromCamera(this.pointer, this.camera.camera);
 
         // Получаем все сущности и проверяем их баунды
-        const entities = EntityManager.getInstance().getAll();
+        const entities = this.entityManager.getAll();
 
         for (const entity of entities) {
             // Пропускаем игрока
@@ -181,7 +185,7 @@ export class BoundsSystem implements System {
                 // Ищем баунд в иерархии
                 const bound = this.findBound(hit.object);
                 if (bound && bound.userData.isBound) {
-                    return new HitTarget(bound);
+                    return new HitTarget(bound, this.entityManager);
                 }
             }
         }

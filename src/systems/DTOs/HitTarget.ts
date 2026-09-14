@@ -6,9 +6,11 @@ import type { BoundModifiers } from "../BoundsSystem";
 
 export class HitTarget {
     private readonly object: Object3D;
+    private readonly entityManager: EntityManager;
 
-    constructor(object: Object3D) {
+    constructor(object: Object3D, entityManager: EntityManager) {
         this.object = object;
+        this.entityManager = entityManager;
     }
 
     get entityId(): string {
@@ -16,7 +18,7 @@ export class HitTarget {
     }
 
     get entity(): Entity | undefined {
-        return EntityManager.getInstance().get(this.entityId);
+        return this.entityManager.get(this.entityId);
     }
 
     get entityGridPos(): GridPos | undefined {
@@ -36,9 +38,7 @@ export class HitTarget {
     }
 
     getDistance(): number | undefined {
-        return EntityManager.getInstance()
-            .getPlayer()
-            ?.position.distanceTo(this.object.position);
+        return this.entityManager.getPlayer()?.position.distanceTo(this.object.position);
     }
 
     getGridDistance(from: GridPos): number {

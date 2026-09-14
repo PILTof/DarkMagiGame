@@ -1,31 +1,31 @@
-type EventCallback = (payload: any) => void;
+import type { GameEventMap } from "./GameEvents.ts";
 
-export class EventBus {
-    private static instance: EventBus;
+type EventCallback<TPayload> = (payload: TPayload) => void;
 
-    public static getInstance(): EventBus {
-        if (EventBus.instance) {
-            return EventBus.instance;
-        }
+/** Synchronous, instance-scoped event bus for one game session. */
+export class EventBus<TEvents extends object = GameEventMap> {
+  private readonly listeners = new Map<keyof TEvents, Set<EventCallback<unknown>>>();
 
-        EventBus.instance = new EventBus();
-        return EventBus.instance;
-    }
+  on<TKey extends keyof TEvents>(
+    event: TKey,
+    callback: EventCallback<TEvents[TKey]>,
+  ): () => void {
+    const callbacks = this.listeners.get(event) ?? new Set<EventCallback<unknown>>();
+    callbacks.add(callback as EventCallback<unknown>);
+    this.listeners.set(event, callbacks);
+    return () => this.off(event, callback);
+  }
 
-    private listeners = new Map<string, Set<EventCallback>>();
+  off<TKey extends keyof TEvents>(event: TKey, callback: EventCallback<TEvents[TKey]>): void {
+    this.listeners.get(event)?.delete(callback as EventCallback<unknown>);
+  }
 
-    on(event: string, callback: EventCallback): void {
-        if (!this.listeners.has(event)) {
-            this.listeners.set(event, new Set());
-        }
-        this.listeners.get(event)!.add(callback);
-    }
+  emit<TKey extends keyof TEvents>(event: TKey, payload: TEvents[TKey]): void {
+    this.listeners.get(event)?.forEach((callback) => callback(payload));
+  }
 
-    off(event: string, callback: EventCallback): void {
-        this.listeners.get(event)?.delete(callback);
-    }
-
-    emit(event: string, payload?: unknown): void {
-        this.listeners.get(event)?.forEach((callback) => callback(payload));
-    }
+  clear(): void {
+    this.listeners.clear();
+  }
 }
+

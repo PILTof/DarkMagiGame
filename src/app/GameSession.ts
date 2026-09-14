@@ -1,5 +1,7 @@
 import { env } from "../config/env.ts";
 import { DEFAULT_MAP_PATH } from "../config/gameConfig.ts";
+import { Clock } from "../core/Clock.ts";
+import { EventBus } from "../core/EventBus.ts";
 import { DevTools } from "../dev/DevTools.ts";
 import { AssetLoader } from "../engine/AssetLoader.ts";
 import { Engine } from "../engine/Engine.ts";
@@ -9,6 +11,7 @@ import { Enemy } from "../entities/Enemy.ts";
 import { EntityAssets } from "../entities/EntityAssets.ts";
 import { EntityManager } from "../entities/EntityManager.ts";
 import { Player } from "../entities/Player.ts";
+import { ProjectileManager } from "../entities/projectiles/ProjectileManager.ts";
 import { SpriteAssets } from "../entities/SpriteAssets.ts";
 import { PointerHandler } from "../input/PointerHandler.ts";
 import { AnimationSystem } from "../systems/AnimationSystem.ts";
@@ -27,118 +30,89 @@ import { MapObjectAssets } from "../world/map/objects/index.ts";
 import { PathfindingService } from "../world/PathfindingService.ts";
 import { TileMap } from "../world/TileMap.ts";
 import { TileAssets } from "../world/tiles/TileAssets.ts";
-import { Clock } from "./Clock.ts";
-import { EventBus } from "./EventBus.ts";
 
-export class Game {
+export class GameSession {
   private readonly clock = new Clock();
-  private readonly eventBus = EventBus.getInstance();
+  private readonly eventBus = new EventBus();
+  private readonly entityManager = new EntityManager();
   private readonly engine: Engine;
   private readonly camera: IsometricCamera;
   private readonly lights: Lights;
+  private readonly pointerHandler: PointerHandler;
   private tileMap: TileMap | null = null;
   private systems: System[] = [];
+  private animationFrameId: number | null = null;
   private readonly mapLoader = new MapLoader();
 
   constructor(container: HTMLElement) {
     this.engine = new Engine(container);
-
     this.camera = new IsometricCamera();
     this.engine.setCamera(this.camera);
-    new PointerHandler(this.camera);
-
+    this.pointerHandler = new PointerHandler(this.camera);
     this.lights = new Lights();
     this.lights.addTo(this.engine.scene);
   }
 
   async load(mapPath: string = DEFAULT_MAP_PATH): Promise<void> {
     const mapData = await this.mapLoader.load(mapPath);
-
     const assetLoader = new AssetLoader();
     const [tileAssets, objectAssets, entityAssets, spriteAssets] = await Promise.all([
-      TileAssets.preload(assetLoader),
-      MapObjectAssets.preload(assetLoader),
-      EntityAssets.preload(assetLoader),
-      SpriteAssets.preload(assetLoader),
+      TileAssets.preload(assetLoader), MapObjectAssets.preload(assetLoader),
+      EntityAssets.preload(assetLoader), SpriteAssets.preload(assetLoader),
     ]);
-
-    console.log("[Game] Loaded sprites:", spriteAssets.getLoadedSprites());
-
+    console.log("[GameSession] Loaded sprites:", spriteAssets.getLoadedSprites());
     this.tileMap = new TileMap(this.engine.scene);
     await this.tileMap.buildFromMap(mapData, tileAssets, objectAssets);
-
-    const entityManager = EntityManager.getInstance();
     const pathfinding = new PathfindingService(this.tileMap);
-
     const spawn = this.tileMap.getPlayerSpawn();
     const player = new Player(spawn, entityAssets);
-    entityManager.add(player, this.engine.scene);
-    
-    // Устанавливаем начальную позицию сущности
-    const spawnPos = this.tileMap.gridToWorldPosition(spawn.q, spawn.r);
-    player.position.copy(spawnPos);
+    this.entityManager.add(player, this.engine.scene);
+    player.position.copy(this.tileMap.gridToWorldPosition(spawn.q, spawn.r));
     player.syncMeshPosition();
-
-    // Настройка камеры для следования за игроком
     this.camera.setFollowTarget(player);
-
-    const entitySpawns = this.tileMap.getSpawns('enemy');
-    
-    for (let i = 0; i < entitySpawns.length; i++) {
-        const spawn = entitySpawns[i];
-        const spawnPos = this.tileMap.gridToWorldPosition(spawn.q, spawn.r);
-        const enemy = new Enemy(spawn.name, {q: spawn.q, r: spawn.r}, entityAssets);
-        enemy.position.copy(spawnPos);
-        enemy.mesh.position.copy(spawnPos);
-        entityManager.add(enemy, this.engine.scene);
+    for (const spawn of this.tileMap.getSpawns("enemy")) {
+      const enemy = new Enemy(spawn.name, { q: spawn.q, r: spawn.r }, entityAssets);
+      const spawnPos = this.tileMap.gridToWorldPosition(spawn.q, spawn.r);
+      enemy.position.copy(spawnPos);
+      enemy.mesh.position.copy(spawnPos);
+      this.entityManager.add(enemy, this.engine.scene);
     }
-
-
-    // Создаем ProjectileSystem отдельно, чтобы передать её в CombatSystem
-
-    const boundsSystem = new BoundsSystem(
-      this.tileMap,
-      this.eventBus,
-      this.engine,
-      this.camera,
-    );
-
+    const projectileManager = new ProjectileManager(this.engine.scene, this.entityManager);
+    const boundsSystem = new BoundsSystem(this.tileMap, this.eventBus, this.engine, this.camera, this.entityManager);
     this.systems = [
-      new InputSystem(this.engine, this.camera, this.tileMap, entityManager, this.eventBus),
+      new InputSystem(this.engine, this.camera, this.tileMap, this.entityManager, this.eventBus),
       new SelectionSystem(this.eventBus),
-      new MovementSystem(entityManager, pathfinding, this.tileMap, this.eventBus),
-      new TileInteractionSystem(this.tileMap, this.eventBus),
-      new TileVisualSystem(this.tileMap, this.eventBus),
-      boundsSystem,
-      new CastSystem(this.tileMap, boundsSystem, this.eventBus),
-      new AnimationSystem(),
-      new CombatSystem(this.engine.scene),
-      new DeathSystem(this.engine.scene),
+      new MovementSystem(this.entityManager, pathfinding, this.tileMap, this.eventBus),
+      new TileInteractionSystem(this.tileMap, this.eventBus, this.entityManager),
+      new TileVisualSystem(this.tileMap, this.eventBus), boundsSystem,
+      new CastSystem(this.tileMap, boundsSystem, this.eventBus, this.entityManager),
+      new AnimationSystem(this.entityManager),
+      new CombatSystem(this.eventBus, projectileManager),
+      new DeathSystem(this.engine.scene, this.entityManager),
     ];
-
-    if (env.debug) {
-      this.initDevTools();
-    }
+    if (env.debug) this.initDevTools();
   }
 
   start(): void {
-    if (!this.tileMap) {
-      throw new Error("Call game.load() before game.start()");
-    }
-
+    if (!this.tileMap) throw new Error("Call GameSession.load() before start()");
     const loop = (): void => {
-      requestAnimationFrame(loop);
+      this.animationFrameId = requestAnimationFrame(loop);
       const dt = this.clock.getDelta();
-      
-      // Обновление камеры для следования за целью
       this.camera.update();
-      
-      for (const system of this.systems) {
-        system.update(dt);
-      }
+      for (const system of this.systems) system.update(dt);
       this.engine.render();
     };
     loop();
+  }
+
+  dispose(): void {
+    if (this.animationFrameId !== null) cancelAnimationFrame(this.animationFrameId);
+    this.animationFrameId = null;
+    this.eventBus.clear();
+    this.pointerHandler.dispose();
+    this.engine.dispose();
+    this.systems = [];
+    this.tileMap = null;
   }
 
   private initDevTools(): void {

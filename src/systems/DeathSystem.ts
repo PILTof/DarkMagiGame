@@ -5,15 +5,17 @@ import type { System } from "./System.ts";
 
 export class DeathSystem implements System {
   private readonly scene: Scene;
+  private readonly entityManager: EntityManager;
 
-  constructor(scene: Scene) {
+  constructor(scene: Scene, entityManager: EntityManager) {
     this.scene = scene;
+    this.entityManager = entityManager;
   }
 
   update(_dt: number): void {
-    for (const entity of EntityManager.getInstance().getAll()) {
+    for (const entity of this.entityManager.getAll()) {
       if (entity instanceof Unit && !entity.isAlive()) {
-        EntityManager.getInstance().remove(entity.id, this.scene);
+        this.entityManager.remove(entity.id, this.scene);
       }
     }
   }

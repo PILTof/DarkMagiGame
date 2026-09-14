@@ -4,16 +4,6 @@ import { Player, PLAYER_ID } from "./Player.ts";
 import { SpriteEntity } from "./SpriteEntity.ts";
 
 export class EntityManager {
-    private static instance: EntityManager | undefined;
-
-    public static getInstance(): EntityManager {
-        if (!EntityManager.instance) {
-            EntityManager.instance = new EntityManager();
-        }
-
-        return EntityManager.instance;
-    }
-
     private readonly entities = new Map<string, Entity>();
 
     add(entity: Entity, scene: THREE.Scene): void {

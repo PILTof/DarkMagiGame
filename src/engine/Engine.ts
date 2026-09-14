@@ -6,6 +6,7 @@ export class Engine {
   readonly renderer: THREE.WebGLRenderer;
   private camera: THREE.Camera | null = null;
   private isometricCamera: IsometricCamera | null = null;
+  private readonly onResizeBound = (): void => this.onResize();
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
@@ -16,7 +17,7 @@ export class Engine {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(this.renderer.domElement);
 
-    window.addEventListener("resize", () => this.onResize());
+    window.addEventListener("resize", this.onResizeBound);
   }
 
   setCamera(isometricCamera: IsometricCamera): void {
@@ -28,6 +29,12 @@ export class Engine {
     if (this.camera) {
       this.renderer.render(this.scene, this.camera);
     }
+  }
+
+  dispose(): void {
+    window.removeEventListener("resize", this.onResizeBound);
+    this.renderer.dispose();
+    this.renderer.domElement.remove();
   }
 
   private onResize(): void {

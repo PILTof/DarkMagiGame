@@ -1,8 +1,8 @@
 import type { Scene } from "three";
+import { calculateArmorReducedDamage } from "../../combat/DamageCalculator";
 import { EventBus } from "../../core/EventBus";
 import { Enemy } from "../../entities/Enemy";
-import type { Entity } from "../../entities/Entity";
-import { EntityManager } from "../../entities/EntityManager";
+
 import { FireballProjectile } from "../../entities/projectiles/FireballProjectile";
 import { ProjectileManager } from "../../entities/projectiles/ProjectileManager";
 import { Unit } from "../../entities/Unit";
@@ -12,11 +12,9 @@ import type { System } from "../System";
 import { DistanceAttack } from "./CombatTypes/DistanceAttack";
 
 export class CombatSystem implements System {
-    private readonly scene: Scene;
     private readonly projectileManager: ProjectileManager;
 
     constructor(scene: Scene) {
-        this.scene = scene;
         this.projectileManager = ProjectileManager.getInstance(scene);
         this.setEvents();
     }
@@ -31,13 +29,7 @@ export class CombatSystem implements System {
         EventBus.getInstance().on(PlayerCombat.dodge, (_e) => {});
     }
 
-    update(_dt: number): void {
-        EntityManager.getInstance()
-            .getAll()
-            .forEach((entity) => {
-                this.checkHp(entity);
-            });
-    }
+    update(_dt: number): void {}
 
     private async onClickTarget(
         sniper: Unit,
@@ -45,9 +37,10 @@ export class CombatSystem implements System {
     ): Promise<void> {
         const unit = target.entity;
         if (unit instanceof Enemy) {
-            const armor = Math.max(target.getBoundModifiers()?.armor ?? 0, 0);
-            const damage = 20 * (100 / (100 + armor));
-            console.log(damage)
+            const damage = calculateArmorReducedDamage(
+                20,
+                target.getBoundModifiers()?.armor,
+            );
 
             if (!sniper.combatIsLocked("fireball")) {
                 this.projectileManager.runProjectile(
@@ -64,9 +57,4 @@ export class CombatSystem implements System {
         }
     }
 
-    private checkHp(entity: Entity): void {
-        if (entity instanceof Unit && entity.healthPoints <= 0) {
-            EntityManager.getInstance().remove(entity.id, this.scene);
-        }
-    }
 }

@@ -1,28 +1,26 @@
-import type { Scene } from "three";
+import { calculateArmorReducedDamage } from "../combat/DamageCalculator.ts";
 import type { EventBus } from "../core/EventBus.ts";
 import { EntityManager } from "../entities/EntityManager.ts";
 import { Unit } from "../entities/Unit.ts";
-import { GridCoords, type GridPos } from "../world/GridCoords.ts";
-import type { TileMap } from "../world/TileMap.ts";
+import { ARCANE_BURST } from "../skills/ArcaneBurst.ts";
+import { getHexRadiusAffectedCells } from "../skills/HexRadiusTargeting.ts";
+import { GridCoords } from "../world/GridCoords.ts";
 import { BoundsSystem } from "./BoundsSystem.ts";
 import type { System } from "./System.ts";
 import { Effects, PlayerCombat } from "./contracts/EventNamesInterface.ts";
 import type { CastRequest, CastResolvedPayload } from "./contracts/TileInteraction.ts";
-import { ARCANE_BURST } from "./TileInteractionSystem.ts";
+import type { TileMap } from "../world/TileMap.ts";
 
 export class CastSystem implements System {
-  private readonly scene: Scene;
   private readonly tileMap: TileMap;
   private readonly boundsSystem: BoundsSystem;
   private readonly eventBus: EventBus;
 
   constructor(
-    scene: Scene,
     tileMap: TileMap,
     boundsSystem: BoundsSystem,
     eventBus: EventBus,
   ) {
-    this.scene = scene;
     this.tileMap = tileMap;
     this.boundsSystem = boundsSystem;
     this.eventBus = eventBus;
@@ -31,13 +29,7 @@ export class CastSystem implements System {
     });
   }
 
-  update(_dt: number): void {
-    for (const entity of EntityManager.getInstance().getAll()) {
-      if (entity instanceof Unit && !entity.isAlive()) {
-        EntityManager.getInstance().remove(entity.id, this.scene);
-      }
-    }
-  }
+  update(_dt: number): void {}
 
   private cast(request: CastRequest): void {
     const caster = EntityManager.getInstance().get(request.casterId);
@@ -56,7 +48,11 @@ export class CastSystem implements System {
       return;
     }
 
-    const affectedCells = this.getAffectedCells(request.target.grid);
+    const affectedCells = getHexRadiusAffectedCells(
+      this.tileMap,
+      request.target.grid,
+      ARCANE_BURST.radius,
+    );
     const hits: CastResolvedPayload["hits"] = [];
 
     for (const entity of EntityManager.getInstance().getAll()) {
@@ -72,7 +68,7 @@ export class CastSystem implements System {
           return [{
             grid: { q: grid.q, r: grid.r },
             armor,
-            damage: ARCANE_BURST.baseDamage * (100 / (100 + armor)),
+            damage: calculateArmorReducedDamage(ARCANE_BURST.baseDamage, armor),
           }];
         });
       if (boundHits.length === 0) continue;
@@ -91,17 +87,6 @@ export class CastSystem implements System {
     };
     this.eventBus.emit(PlayerCombat.cast_resolved, resolved);
     this.eventBus.emit(Effects.aoe_impact, resolved);
-  }
-
-  private getAffectedCells(center: GridPos): GridPos[] {
-    const cells: GridPos[] = [];
-    for (let r = 0; r < this.tileMap.height; r++) {
-      for (let q = 0; q < this.tileMap.width; q++) {
-        const cell = { q, r };
-        if (GridCoords.distance(center, cell) <= ARCANE_BURST.radius) cells.push(cell);
-      }
-    }
-    return cells;
   }
 
   private reject(reason: string, request: CastRequest): void {

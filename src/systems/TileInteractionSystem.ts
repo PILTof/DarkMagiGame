@@ -1,56 +1,12 @@
 import type { EventBus } from "../core/EventBus.ts";
 import { EntityManager } from "../entities/EntityManager.ts";
-import type { Unit } from "../entities/Unit.ts";
-import { GridCoords, type GridPos } from "../world/GridCoords.ts";
+import { ARCANE_BURST } from "../skills/ArcaneBurst.ts";
+import { getHexRadiusAffectedCells } from "../skills/HexRadiusTargeting.ts";
+import type { CastConditionContext, CastConditionResult } from "../skills/SkillDefinition.ts";
 import type { TileMap } from "../world/TileMap.ts";
 import type { System } from "./System.ts";
 import { Effects, PlayerCombat, TileInteraction } from "./contracts/EventNamesInterface.ts";
 import type { CastRequest, TargetPreviewPayload, TilePointerPayload } from "./contracts/TileInteraction.ts";
-
-type CastConditionContext = {
-  caster: Unit | undefined;
-  target: GridPos;
-  tileMap: TileMap;
-  skill: { range: number };
-};
-
-type CastConditionResult = {
-  isValid: boolean;
-  reason?: string;
-};
-
-type CastCondition = {
-  id: string;
-  validate(context: CastConditionContext): CastConditionResult;
-};
-
-const casterExistsCondition: CastCondition = {
-  id: "caster-exists",
-  validate: ({ caster }) =>
-    caster
-      ? { isValid: true }
-      : { isValid: false, reason: "No caster is available." },
-};
-
-const targetInRangeCondition: CastCondition = {
-  id: "target-in-range",
-  validate: ({ caster, target, tileMap, skill }) => {
-    if (!caster) return { isValid: true };
-    const casterGrid = tileMap.worldToGrid(caster.position);
-    const distance = GridCoords.distance(casterGrid, target);
-    return distance <= skill.range
-      ? { isValid: true }
-      : { isValid: false, reason: `Target is out of range (${distance}/${skill.range}).` };
-  },
-};
-
-export const ARCANE_BURST = {
-  id: "arcane-burst",
-  radius: 4,
-  range: 4,
-  baseDamage: 6,
-  conditions: [casterExistsCondition, targetInRangeCondition] as CastCondition[],
-} as const;
 
 export class TileInteractionSystem implements System {
   private readonly tileMap: TileMap;
@@ -105,7 +61,11 @@ export class TileInteractionSystem implements System {
 
   private createPreview(target: TilePointerPayload | null): TargetPreviewPayload {
     if (!target) return { target: null, affectedCells: [], isValid: false };
-    const affectedCells = this.getAffectedCells(target.grid);
+    const affectedCells = getHexRadiusAffectedCells(
+      this.tileMap,
+      target.grid,
+      ARCANE_BURST.radius,
+    );
     const validation = this.validateCast(target.grid);
     return {
       target,
@@ -115,7 +75,7 @@ export class TileInteractionSystem implements System {
     };
   }
 
-  private validateCast(target: GridPos): CastConditionResult {
+  private validateCast(target: { q: number; r: number }): CastConditionResult {
     if (!this.tileMap.getTile(target.q, target.r)) {
       return { isValid: false, reason: "Target tile does not exist." };
     }
@@ -135,16 +95,4 @@ export class TileInteractionSystem implements System {
     return { isValid: true };
   }
 
-  private getAffectedCells(center: GridPos): GridPos[] {
-    const cells: GridPos[] = [];
-    for (let r = 0; r < this.tileMap.height; r++) {
-      for (let q = 0; q < this.tileMap.width; q++) {
-        const cell = { q, r };
-        if (GridCoords.distance(center, cell) <= ARCANE_BURST.radius) {
-          cells.push(cell);
-        }
-      }
-    }
-    return cells;
-  }
 }

@@ -15,6 +15,7 @@ import { AnimationSystem } from "../systems/AnimationSystem.ts";
 import { BoundsSystem } from "../systems/BoundsSystem.ts";
 import { CastSystem } from "../systems/CastSystem.ts";
 import { CombatSystem } from "../systems/Combat/CombatSystem.ts";
+import { DeathSystem } from "../systems/DeathSystem.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
 import { MovementSystem } from "../systems/MovementSystem.ts";
 import { SelectionSystem } from "../systems/SelectionSystem.ts";
@@ -109,9 +110,10 @@ export class Game {
       new TileInteractionSystem(this.tileMap, this.eventBus),
       new TileVisualSystem(this.tileMap, this.eventBus),
       boundsSystem,
-      new CastSystem(this.engine.scene, this.tileMap, boundsSystem, this.eventBus),
+      new CastSystem(this.tileMap, boundsSystem, this.eventBus),
       new AnimationSystem(),
       new CombatSystem(this.engine.scene),
+      new DeathSystem(this.engine.scene),
     ];
 
     if (env.debug) {

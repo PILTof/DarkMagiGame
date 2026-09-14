@@ -1,31 +1,17 @@
-import { GridCoords } from "../world/GridCoords.ts";
-import type { CastCondition, SkillDefinition } from "./SkillDefinition.ts";
-
-const casterExistsCondition: CastCondition = {
-  id: "caster-exists",
-  validate: ({ caster }) =>
-    caster
-      ? { isValid: true }
-      : { isValid: false, reason: "No caster is available." },
-};
-
-const targetInRangeCondition: CastCondition = {
-  id: "target-in-range",
-  validate: ({ caster, target, tileMap, skill }) => {
-    if (!caster) return { isValid: true };
-
-    const casterGrid = tileMap.worldToGrid(caster.position);
-    const distance = GridCoords.distance(casterGrid, target);
-    return distance <= skill.range
-      ? { isValid: true }
-      : { isValid: false, reason: `Target is out of range (${distance}/${skill.range}).` };
-  },
-};
+import { casterExistsCondition } from "./conditions/CasterExistsCondition.ts";
+import { cooldownCondition } from "./conditions/CooldownCondition.ts";
+import { targetInRangeCondition } from "./conditions/TargetInRangeCondition.ts";
+import type { SkillDefinition } from "./contracts/SkillDefinition.ts";
 
 export const ARCANE_BURST: SkillDefinition = {
-  id: "arcane-burst",
-  radius: 4,
-  range: 4,
-  baseDamage: 6,
-  conditions: [casterExistsCondition, targetInRangeCondition],
+    id: "arcane-burst",
+    radius: 2,
+    range: 4,
+    baseDamage: 6,
+    cooldownSec: 2,
+    conditions: [
+        casterExistsCondition,
+        cooldownCondition,
+        targetInRangeCondition,
+    ],
 };

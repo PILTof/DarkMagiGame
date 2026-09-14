@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CommandDispatcher } from "../../src/commands/CommandDispatcher.ts";
-import type { MoveUnitCommand } from "../../src/commands/MoveUnitCommand.ts";
-import type { StopUnitCommand } from "../../src/commands/StopUnitCommand.ts";
-import type { CastSkillCommand } from "../../src/commands/CastSkillCommand.ts";
+import type { CastSkillCommand } from "../../src/commands/contracts/CastSkillCommand.ts";
+import type { MoveUnitCommand } from "../../src/commands/contracts/MoveUnitCommand.ts";
+import type { StopUnitCommand } from "../../src/commands/contracts/StopUnitCommand.ts";
 
 describe("CommandDispatcher", () => {
   it("dispatches move command to registered handler", () => {

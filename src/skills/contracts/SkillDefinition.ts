@@ -1,12 +1,15 @@
-import type { Unit } from "../entities/Unit.ts";
-import type { GridPos } from "../world/GridCoords.ts";
-import type { TileMap } from "../world/TileMap.ts";
+import type { TimeProvider } from "../../core/TimeProvider";
+import type { Unit } from "../../entities/Unit";
+import type { GridPos } from "../../world/GridCoords";
+import type { TileMap } from "../../world/TileMap";
+
 
 export type CastConditionContext = {
   caster: Unit | undefined;
   target: GridPos;
   tileMap: TileMap;
-  skill: Pick<SkillDefinition, "range">;
+  skill: SkillDefinition;
+  timeProvider: TimeProvider;
 };
 
 export type CastConditionResult = {
@@ -24,5 +27,6 @@ export type SkillDefinition = {
   radius: number;
   range: number;
   baseDamage: number;
+  cooldownSec?: number;
   conditions: readonly CastCondition[];
 };

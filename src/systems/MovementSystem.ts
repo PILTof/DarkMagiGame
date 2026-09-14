@@ -1,12 +1,12 @@
 import * as THREE from "three";
-import type { MoveUnitCommand } from "../commands/MoveUnitCommand.ts";
-import type { StopUnitCommand } from "../commands/StopUnitCommand.ts";
+import type { MoveUnitCommand } from "../commands/contracts/MoveUnitCommand.ts";
+import type { StopUnitCommand } from "../commands/contracts/StopUnitCommand.ts";
 import type { EventBus } from "../core/EventBus.ts";
 import type { EntityManager } from "../entities/EntityManager.ts";
 import type { GridPos } from "../world/GridCoords.ts";
+import type { HexGrid } from "../world/hex/HexGrid.ts";
 import type { PathfindingService } from "../world/PathfindingService.ts";
 import type { TileMap } from "../world/TileMap.ts";
-import type { HexGrid } from "../world/hex/HexGrid.ts";
 import type { System } from "./System.ts";
 
 export class MovementSystem implements System {

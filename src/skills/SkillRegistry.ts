@@ -1,4 +1,4 @@
-import type { SkillDefinition } from "./SkillDefinition.ts";
+import type { SkillDefinition } from "./contracts/SkillDefinition";
 
 /**
  * Skill registry — хранит все доступные скиллы игры.

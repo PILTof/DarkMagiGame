@@ -1,14 +1,16 @@
+import type { CommandDispatcher } from "../commands/CommandDispatcher.ts";
+import type { CastSkillCommand } from "../commands/contracts/CastSkillCommand.ts";
 import type { EventBus } from "../core/EventBus.ts";
+import type { TimeProvider } from "../core/TimeProvider.ts";
 import type { EntityManager } from "../entities/EntityManager.ts";
-import { getHexRadiusAffectedCells } from "../skills/HexRadiusTargeting.ts";
 import type { ActiveSkillSlot } from "../skills/ActiveSkillSlot.ts";
-import type { CastConditionContext, CastConditionResult } from "../skills/SkillDefinition.ts";
+import type { CastConditionContext, CastConditionResult, SkillDefinition } from "../skills/contracts/SkillDefinition.ts";
+import { getHexRadiusAffectedCells } from "../skills/helpers/HexRadiusTargeting.ts";
+import { ValidateSkillCast } from "../skills/helpers/ValidateSkillCast.ts";
 import type { TileMap } from "../world/TileMap.ts";
 import type { System } from "./System.ts";
 import { Effects, PlayerCombat, TileInteraction } from "./contracts/EventNamesInterface.ts";
 import type { TargetPreviewPayload, TilePointerPayload } from "./contracts/TileInteraction.ts";
-import type { CommandDispatcher } from "../commands/CommandDispatcher.ts";
-import type { CastSkillCommand } from "../commands/CastSkillCommand.ts";
 
 export class TileInteractionSystem implements System {
   private readonly tileMap: TileMap;
@@ -16,6 +18,7 @@ export class TileInteractionSystem implements System {
   private readonly entityManager: EntityManager;
   private readonly activeSkillSlot: ActiveSkillSlot;
   private readonly commandDispatcher: CommandDispatcher;
+  private readonly timeProvider: TimeProvider;
   private targetingActive = false;
 
   constructor(
@@ -24,12 +27,14 @@ export class TileInteractionSystem implements System {
     entityManager: EntityManager,
     activeSkillSlot: ActiveSkillSlot,
     commandDispatcher: CommandDispatcher,
+    timeProvider: TimeProvider,
   ) {
     this.tileMap = tileMap;
     this.eventBus = eventBus;
     this.entityManager = entityManager;
     this.activeSkillSlot = activeSkillSlot;
     this.commandDispatcher = commandDispatcher;
+    this.timeProvider = timeProvider;
     this.eventBus.on(TileInteraction.pointer_move, (payload) => {
       this.onPointerMove(payload as TilePointerPayload | null);
     });
@@ -100,7 +105,7 @@ export class TileInteractionSystem implements System {
     };
   }
 
-  private validateCast(target: { q: number; r: number }, skill: import("../skills/SkillDefinition.ts").SkillDefinition): CastConditionResult {
+  private validateCast(target: { q: number; r: number }, skill: SkillDefinition): CastConditionResult {
     if (!this.tileMap.getTile(target.q, target.r)) {
       return { isValid: false, reason: "Target tile does not exist." };
     }
@@ -111,13 +116,10 @@ export class TileInteractionSystem implements System {
       target,
       tileMap: this.tileMap,
       skill,
+      timeProvider: this.timeProvider,
     };
 
-    for (const condition of skill.conditions) {
-      const result = condition.validate(context);
-      if (!result.isValid) return result;
-    }
-    return { isValid: true };
+    return ValidateSkillCast(context);
   }
 
 }

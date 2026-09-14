@@ -1,17 +1,19 @@
 import { calculateArmorReducedDamage } from "../combat/DamageCalculator.ts";
-import type { CastSkillCommand } from "../commands/CastSkillCommand.ts";
+import type { CastSkillCommand } from "../commands/contracts/CastSkillCommand.ts";
 import type { EventBus } from "../core/EventBus.ts";
+import type { TimeProvider } from "../core/TimeProvider.ts";
 import type { EntityManager } from "../entities/EntityManager.ts";
 import { Unit } from "../entities/Unit.ts";
-import { getHexRadiusAffectedCells } from "../skills/HexRadiusTargeting.ts";
 import type { SkillRegistry } from "../skills/SkillRegistry.ts";
-import { GridCoords } from "../world/GridCoords.ts";
+import type { CastConditionContext } from "../skills/contracts/SkillDefinition.ts";
+import { getHexRadiusAffectedCells } from "../skills/helpers/HexRadiusTargeting.ts";
+import { ValidateSkillCast } from "../skills/helpers/ValidateSkillCast.ts";
+import type { TileMap } from "../world/TileMap.ts";
+import type { HexGrid } from "../world/hex/HexGrid.ts";
 import { BoundsSystem } from "./BoundsSystem.ts";
 import type { System } from "./System.ts";
 import { Effects, PlayerCombat } from "./contracts/EventNamesInterface.ts";
 import type { CastResolvedPayload } from "./contracts/TileInteraction.ts";
-import type { TileMap } from "../world/TileMap.ts";
-import type { HexGrid } from "../world/hex/HexGrid.ts";
 
 export class CastSystem implements System {
   private readonly tileMap: TileMap;
@@ -20,6 +22,7 @@ export class CastSystem implements System {
   private readonly eventBus: EventBus;
   private readonly entityManager: EntityManager;
   private readonly skillRegistry: SkillRegistry;
+  private readonly timeProvider: TimeProvider;
 
   constructor(
     tileMap: TileMap,
@@ -28,6 +31,7 @@ export class CastSystem implements System {
     eventBus: EventBus,
     entityManager: EntityManager,
     skillRegistry: SkillRegistry,
+    timeProvider: TimeProvider,
   ) {
     this.tileMap = tileMap;
     this.hexGrid = hexGrid;
@@ -35,6 +39,7 @@ export class CastSystem implements System {
     this.eventBus = eventBus;
     this.entityManager = entityManager;
     this.skillRegistry = skillRegistry;
+    this.timeProvider = timeProvider;
   }
 
   update(_dt: number): void {}
@@ -58,9 +63,17 @@ export class CastSystem implements System {
       return;
     }
 
-    const casterGrid = this.tileMap.worldToGrid(caster.position);
-    if (GridCoords.distance(casterGrid, command.targetGrid) > skill.range) {
-      this.reject("out-of-range", command);
+    // Authoritative validation: re-check all skill conditions
+    const context: CastConditionContext = {
+      caster,
+      target: command.targetGrid,
+      tileMap: this.tileMap,
+      skill,
+      timeProvider: this.timeProvider,
+    };
+    const validation = ValidateSkillCast(context);
+    if (!validation.isValid) {
+      this.reject(validation.reason ?? "Cast validation failed.", command);
       return;
     }
 
@@ -92,6 +105,11 @@ export class CastSystem implements System {
       const damage = boundHits.reduce((total, hit) => total + hit.damage, 0);
       entity.takeDamage(damage);
       hits.push({ unitId: entity.id, damage, bounds: boundHits });
+    }
+
+    // Start cooldown after successful cast, before events
+    if (skill.cooldownSec !== undefined) {
+      caster.startSkillCooldown(skill.id, skill.cooldownSec * 1000, this.timeProvider.now());
     }
 
     const resolved: CastResolvedPayload = {

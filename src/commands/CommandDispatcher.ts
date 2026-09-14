@@ -1,7 +1,7 @@
-import type { CastSkillCommand } from "./CastSkillCommand.ts";
 import type { CommandHandler } from "./CommandHandler.ts";
-import type { MoveUnitCommand } from "./MoveUnitCommand.ts";
-import type { StopUnitCommand } from "./StopUnitCommand.ts";
+import type { CastSkillCommand } from "./contracts/CastSkillCommand.ts";
+import type { MoveUnitCommand } from "./contracts/MoveUnitCommand.ts";
+import type { StopUnitCommand } from "./contracts/StopUnitCommand.ts";
 
 /**
  * Command dispatcher — маршрутизирует команды к соответствующим handler'ам.

@@ -1,6 +1,6 @@
-import type { MoveUnitCommand } from "./MoveUnitCommand.ts";
-import type { StopUnitCommand } from "./StopUnitCommand.ts";
-import type { CastSkillCommand } from "./CastSkillCommand.ts";
+import type { CastSkillCommand } from "./contracts/CastSkillCommand";
+import type { MoveUnitCommand } from "./contracts/MoveUnitCommand";
+import type { StopUnitCommand } from "./contracts/StopUnitCommand";
 
 /**
  * Command handler interface.

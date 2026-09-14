@@ -1,5 +1,5 @@
-import { GridCoords, type GridPos } from "../world/GridCoords.ts";
-import type { TileMap } from "../world/TileMap.ts";
+import { GridCoords, type GridPos } from "../../world/GridCoords.ts";
+import type { TileMap } from "../../world/TileMap.ts";
 
 export function getHexRadiusAffectedCells(
   tileMap: TileMap,

@@ -1,7 +1,7 @@
 import type { Object3D } from "three";
 import * as THREE from "three";
-import type { MoveUnitCommand } from "../commands/MoveUnitCommand.ts";
 import type { CommandDispatcher } from "../commands/CommandDispatcher.ts";
+import type { MoveUnitCommand } from "../commands/contracts/MoveUnitCommand.ts";
 import type { EventBus } from "../core/EventBus";
 import type { Engine } from "../engine/Engine";
 import type { IsometricCamera } from "../engine/IsometricCamera";

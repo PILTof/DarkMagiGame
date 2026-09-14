@@ -10,6 +10,7 @@ export class Unit extends Entity {
     canAttack = true;
 
     private lockedCombat: Record<string, boolean> = {};
+    private readonly skillCooldowns = new Map<string, number>();
 
     public healthPoints: number = 1;
     public maxHealthPoints: number = 1;
@@ -117,6 +118,27 @@ export class Unit extends Entity {
 
     setWorldPath(path: THREE.Vector3[]): void {
         this.worldPath = path;
+    }
+
+    /**
+     * Запускает cooldown для скилла.
+     * @param skillId Идентификатор скилла
+     * @param durationMs Продолжительность cooldown в миллисекундах
+     * @param nowMs Текущее время в миллисекундах
+     */
+    startSkillCooldown(skillId: string, durationMs: number, nowMs: number): void {
+        this.skillCooldowns.set(skillId, nowMs + durationMs);
+    }
+
+    /**
+     * Проверяет, готов ли скилл к использованию (cooldown истёк или отсутствует).
+     * @param skillId Идентификатор скилла
+     * @param nowMs Текущее время в миллисекундах
+     * @returns true, если скилл готов к использованию
+     */
+    isSkillReady(skillId: string, nowMs: number): boolean {
+        const readyAt = this.skillCooldowns.get(skillId);
+        return readyAt === undefined || nowMs >= readyAt;
     }
 
     clearPath(): void {

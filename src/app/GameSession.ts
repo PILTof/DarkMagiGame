@@ -3,6 +3,7 @@ import { DEFAULT_MAP_PATH } from "../config/gameConfig.ts";
 import { CommandDispatcher } from "../commands/CommandDispatcher.ts";
 import { Clock } from "../core/Clock.ts";
 import { EventBus } from "../core/EventBus.ts";
+import { performanceTimeProvider } from "../core/TimeProvider.ts";
 import { DevTools } from "../dev/DevTools.ts";
 import { AssetLoader } from "../engine/AssetLoader.ts";
 import { Engine } from "../engine/Engine.ts";
@@ -93,7 +94,7 @@ export class GameSession {
     const projectileManager = new ProjectileManager(this.engine.scene, this.entityManager);
     const boundsSystem = new BoundsSystem(this.tileMap, this.commandDispatcher, this.eventBus, this.engine, this.camera, this.entityManager);
     const movementSystem = new MovementSystem(this.entityManager, pathfinding, this.tileMap, hexGrid, this.eventBus);
-    const castSystem = new CastSystem(this.tileMap, hexGrid, boundsSystem, this.eventBus, this.entityManager, this.skillRegistry);
+    const castSystem = new CastSystem(this.tileMap, hexGrid, boundsSystem, this.eventBus, this.entityManager, this.skillRegistry, performanceTimeProvider);
     
     // Register command handlers
     this.commandDispatcher.registerHandler(movementSystem);
@@ -103,7 +104,7 @@ export class GameSession {
       new InputSystem(this.engine, this.camera, this.tileMap, this.entityManager, this.eventBus),
       new SelectionSystem(this.eventBus),
       movementSystem,
-      new TileInteractionSystem(this.tileMap, this.eventBus, this.entityManager, this.activeSkillSlot, this.commandDispatcher),
+      new TileInteractionSystem(this.tileMap, this.eventBus, this.entityManager, this.activeSkillSlot, this.commandDispatcher, performanceTimeProvider),
       new TileVisualSystem(this.tileMap, this.eventBus), boundsSystem,
       castSystem,
       new AnimationSystem(this.entityManager),

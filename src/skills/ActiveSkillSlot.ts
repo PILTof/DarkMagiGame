@@ -1,4 +1,4 @@
-import type { SkillDefinition } from "./SkillDefinition.ts";
+import type { SkillDefinition } from "./contracts/SkillDefinition";
 
 /**
  * Active skill slot — текущий выбранный скилл игрока для UI hotbar.

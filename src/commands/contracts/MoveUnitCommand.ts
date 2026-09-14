@@ -1,4 +1,4 @@
-import type { GridPos } from "../world/GridCoords.ts";
+import type { GridPos } from "../../world/GridCoords.ts";
 
 export type MoveUnitCommand = {
   readonly unitId: string;

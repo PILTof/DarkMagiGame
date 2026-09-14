@@ -15,7 +15,7 @@ import type { System } from "./System";
 import { PlayerCombat, PlayerMovement } from "./contracts/EventNamesInterface";
 
 export type BoundModifiers = {
-    health_points?: number;
+    armor?: number;
     mana_pool?: number;
     stamina?: number;
 };
@@ -68,15 +68,24 @@ export class BoundsSystem implements System {
     }
 
     public getBoundAtGrid(unit: Unit, grid: GridPos): HitTarget | null {
-        let result: HitTarget | null = null;
+        return this.getBoundsAtGrids(unit, [grid])[0] ?? null;
+    }
+
+    public getBoundsAtGrids(unit: Unit, grids: Iterable<GridPos>): HitTarget[] {
+        const gridKeys = new Set(
+            Array.from(grids, (grid) => this.getGridKey(grid)),
+        );
+        const bounds: HitTarget[] = [];
+
         unit.mesh.traverse((object) => {
-            if (result || object.userData.isBound !== true) return;
+            if (object.userData.isBound !== true) return;
             const boundGrid = object.userData.grid as GridPos | undefined;
-            if (boundGrid?.q === grid.q && boundGrid.r === grid.r) {
-                result = new HitTarget(object);
+            if (boundGrid && gridKeys.has(this.getGridKey(boundGrid))) {
+                bounds.push(new HitTarget(object));
             }
         });
-        return result;
+
+        return bounds;
     }
 
     private handleTargetRequest(payload: {
@@ -213,7 +222,7 @@ export class BoundsSystem implements System {
 
             this.makeBound(lx, this.boundYPos, lz, entity, tile).then((mesh) => {
                 mesh.userData.modifiers = {
-                    health_points: 5,
+                    armor: 5,
                 };
                 entity.mesh.add(mesh);
             });
@@ -221,7 +230,7 @@ export class BoundsSystem implements System {
 
         this.makeBound(0, this.boundYPos, 0, entity, currentGrid).then((mesh) => {
             mesh.userData.modifiers = {
-                health_points: 10,
+                armor: 50,
             };
             entity.mesh.add(mesh);
         });
@@ -235,6 +244,10 @@ export class BoundsSystem implements System {
      * @param entity - сущность
      * @returns 
      */
+    private getGridKey(grid: GridPos): string {
+        return `${grid.q},${grid.r}`;
+    }
+
     private async makeBound(
         x: number,
         y: number,

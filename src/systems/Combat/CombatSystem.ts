@@ -45,10 +45,9 @@ export class CombatSystem implements System {
     ): Promise<void> {
         const unit = target.entity;
         if (unit instanceof Enemy) {
-            const modifiers = target.getBoundModifiers();
-            const damage = modifiers?.health_points
-                ? modifiers.health_points * 6
-                : 6;
+            const armor = Math.max(target.getBoundModifiers()?.armor ?? 0, 0);
+            const damage = 20 * (100 / (100 + armor));
+            console.log(damage)
 
             if (!sniper.combatIsLocked("fireball")) {
                 this.projectileManager.runProjectile(

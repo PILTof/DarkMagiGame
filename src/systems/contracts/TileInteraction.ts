@@ -26,5 +26,13 @@ export type CastResolvedPayload = {
   skillId: string;
   targetGrid: { q: number; r: number };
   affectedCells: Array<{ q: number; r: number }>;
-  hits: Array<{ unitId: string; damage: number }>;
+  hits: Array<{
+    unitId: string;
+    damage: number;
+    bounds: Array<{
+      grid: { q: number; r: number };
+      armor: number;
+      damage: number;
+    }>;
+  }>;
 };

@@ -57,19 +57,29 @@ export class CastSystem implements System {
     }
 
     const affectedCells = this.getAffectedCells(request.target.grid);
-    const cellKeys = new Set(affectedCells.map((cell) => this.key(cell)));
     const hits: CastResolvedPayload["hits"] = [];
 
     for (const entity of EntityManager.getInstance().getAll()) {
       if (!(entity instanceof Unit) || entity.id === caster.id) continue;
-      const unitGrid = this.tileMap.worldToGrid(entity.position);
-      if (!cellKeys.has(this.key(unitGrid))) continue;
 
-      const bound = this.boundsSystem.getBoundAtGrid(entity, unitGrid);
-      const modifier = bound?.getBoundModifiers()?.health_points ?? 1;
-      const damage = modifier * ARCANE_BURST.baseDamage;
+      const boundHits = this.boundsSystem
+        .getBoundsAtGrids(entity, affectedCells)
+        .flatMap((bound) => {
+          const grid = bound.boundGrid;
+          if (!grid) return [];
+
+          const armor = Math.max(bound.getBoundModifiers()?.armor ?? 0, 0);
+          return [{
+            grid: { q: grid.q, r: grid.r },
+            armor,
+            damage: ARCANE_BURST.baseDamage * (100 / (100 + armor)),
+          }];
+        });
+      if (boundHits.length === 0) continue;
+
+      const damage = boundHits.reduce((total, hit) => total + hit.damage, 0);
       entity.takeDamage(damage);
-      hits.push({ unitId: entity.id, damage });
+      hits.push({ unitId: entity.id, damage, bounds: boundHits });
     }
 
     const resolved: CastResolvedPayload = {
@@ -98,7 +108,4 @@ export class CastSystem implements System {
     this.eventBus.emit(PlayerCombat.cast_rejected, { reason, request });
   }
 
-  private key(grid: GridPos): string {
-    return `${grid.q},${grid.r}`;
-  }
 }

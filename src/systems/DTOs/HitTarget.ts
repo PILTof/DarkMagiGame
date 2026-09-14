@@ -31,6 +31,10 @@ export class HitTarget {
         return this.object.userData.modifiers;
     }
 
+    get boundGrid(): GridPos | undefined {
+        return this.object.userData.grid as GridPos | undefined;
+    }
+
     getDistance(): number | undefined {
         return EntityManager.getInstance()
             .getPlayer()

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HexGrid } from "./HexGrid.ts";
+import { HexGrid } from "../../../src/world/hex/HexGrid.ts";
 
 describe("HexGrid", () => {
   it("respects bounds and walkability", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getHexRadiusAffectedCells } from "./HexRadiusTargeting.ts";
+import { getHexRadiusAffectedCells } from "../../src/skills/HexRadiusTargeting.ts";
 
 describe("getHexRadiusAffectedCells", () => {
   it("returns only in-map cells inside the requested hex radius", () => {

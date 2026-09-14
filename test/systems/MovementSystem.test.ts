@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import type { MoveUnitCommand } from "../commands/MoveUnitCommand.ts";
-import type { StopUnitCommand } from "../commands/StopUnitCommand.ts";
-import { EventBus } from "../core/EventBus.ts";
-import type { GameEventMap } from "../core/GameEvents.ts";
-import { HexGrid } from "../world/hex/HexGrid.ts";
-import { MovementSystem } from "./MovementSystem.ts";
+import type { MoveUnitCommand } from "../../src/commands/MoveUnitCommand.ts";
+import type { StopUnitCommand } from "../../src/commands/StopUnitCommand.ts";
+import { EventBus } from "../../src/core/EventBus.ts";
+import type { GameEventMap } from "../../src/core/GameEvents.ts";
+import { HexGrid } from "../../src/world/hex/HexGrid.ts";
+import { MovementSystem } from "../../src/systems/MovementSystem.ts";
 import * as THREE from "three";
 
 describe("MovementSystem command handlers", () => {

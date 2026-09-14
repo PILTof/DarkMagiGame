@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { SkillRegistry } from "./SkillRegistry.ts";
-import { ARCANE_BURST } from "./ArcaneBurst.ts";
+import { SkillRegistry } from "../../src/skills/SkillRegistry.ts";
+import { ARCANE_BURST } from "../../src/skills/ArcaneBurst.ts";
 
 describe("SkillRegistry", () => {
   it("registers and retrieves skills", () => {

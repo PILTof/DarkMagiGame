@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EventBus } from "./EventBus.ts";
+import { EventBus } from "../../src/core/EventBus.ts";
 
 type TestEvents = {
   changed: { value: number };

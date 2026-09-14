@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GridCoords } from "./GridCoords.ts";
+import { GridCoords } from "../../src/world/GridCoords.ts";
 
 describe("GridCoords", () => {
   it("round-trips axial coordinates through world space", () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { ActiveSkillSlot } from "./ActiveSkillSlot.ts";
-import { ARCANE_BURST } from "./ArcaneBurst.ts";
+import { ActiveSkillSlot } from "../../src/skills/ActiveSkillSlot.ts";
+import { ARCANE_BURST } from "../../src/skills/ArcaneBurst.ts";
 
 describe("ActiveSkillSlot", () => {
   it("starts empty", () => {

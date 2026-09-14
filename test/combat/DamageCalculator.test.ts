@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateArmorReducedDamage } from "./DamageCalculator.ts";
+import { calculateArmorReducedDamage } from "../../src/combat/DamageCalculator.ts";
 
 describe("calculateArmorReducedDamage", () => {
   it("reduces damage by the armor formula", () => {

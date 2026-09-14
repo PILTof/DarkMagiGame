@@ -26,9 +26,9 @@ export class CombatSystem implements System {
             this.onClickTarget(e.sniper, e.target),
         );
 
-        EventBus.getInstance().on(PlayerCombat.cast_spell, (e) => {});
+        EventBus.getInstance().on(PlayerCombat.cast_spell, (_e) => {});
 
-        EventBus.getInstance().on(PlayerCombat.dodge, (e) => {});
+        EventBus.getInstance().on(PlayerCombat.dodge, (_e) => {});
     }
 
     update(_dt: number): void {

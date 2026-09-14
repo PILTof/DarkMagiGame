@@ -5,10 +5,10 @@ import type { IsometricCamera } from "../engine/IsometricCamera.ts";
 import type { EntityManager } from "../entities/EntityManager.ts";
 import type { TileMap } from "../world/TileMap.ts";
 import type { System } from "./System.ts";
-import { PlayerMovement, TileInteraction } from "./contracts/EventNamesInterface.ts";
+import { PlayerCombat, TileInteraction } from "./contracts/EventNamesInterface.ts";
 import type { TilePointerPayload } from "./contracts/TileInteraction.ts";
 
-export type PlayerMovePayload = { x: number; z: number; event: Event };
+export type PlayerMovePayload = { x: number; z: number; event?: Event };
 
 export class InputSystem implements System {
   private readonly raycaster = new THREE.Raycaster();
@@ -67,12 +67,7 @@ export class InputSystem implements System {
     if (!target) return;
 
     if (event.button === 2) {
-      const payload: PlayerMovePayload = {
-        x: target.worldPosition.x,
-        z: target.worldPosition.z,
-        event,
-      };
-      this.eventBus.emit(PlayerMovement.move_to, payload);
+      this.eventBus.emit(PlayerCombat.target_requested, { target, event });
       return;
     }
 

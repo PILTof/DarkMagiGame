@@ -1,5 +1,6 @@
 export const PlayerCombat = {
     click_target: "player:hit_targer",
+    target_requested: "player:target-requested",
     cast_spell: "player:cast_spell",
     cast_rejected: "player:cast-rejected",
     cast_resolved: "player:cast-resolved",

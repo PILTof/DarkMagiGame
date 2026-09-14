@@ -53,10 +53,11 @@ export class BoundsSystem implements System {
         this.player = EntityManager.getInstance().getPlayer();
 
         if (this.player) {
-            this.eventBus.on(PlayerMovement.move_to, (payload: any) => {
-                this.action.run = true;
-                this.action.target = this.pickEnemyBound(payload.event);
-                this.checkHit(this.player);
+            this.eventBus.on(PlayerCombat.target_requested, (payload) => {
+                this.handleTargetRequest(payload as {
+                    event: PointerEvent;
+                    target: { worldPosition: THREE.Vector3 };
+                });
             });
         }
 
@@ -76,6 +77,42 @@ export class BoundsSystem implements System {
             }
         });
         return result;
+    }
+
+    private handleTargetRequest(payload: {
+        event: PointerEvent;
+        target: { worldPosition: THREE.Vector3 };
+    }): void {
+        const enemyBound = this.pickEnemyBound(payload.event);
+        if (!enemyBound) {
+            this.action.run = false;
+            this.action.target = null;
+            this.eventBus.emit(PlayerMovement.move_to, {
+                x: payload.target.worldPosition.x,
+                z: payload.target.worldPosition.z,
+            });
+            return;
+        }
+
+        this.action.target = enemyBound;
+        this.action.run = true;
+        this.checkHit(this.player);
+
+        // Если цель вне радиуса, путь назначается один раз. update() далее
+        // отслеживает только вход в радиус и запускает единственную атаку.
+        if (this.action.run) {
+            const targetGrid = enemyBound.entityGridPos;
+            if (!targetGrid) {
+                this.action.run = false;
+                this.action.target = null;
+                return;
+            }
+            const targetWorld = this.tileMap.gridToWorldPosition(targetGrid.q, targetGrid.r);
+            this.eventBus.emit(PlayerMovement.move_to, {
+                x: targetWorld.x,
+                z: targetWorld.z,
+            });
+        }
     }
 
     private checkHit(sniper: Entity) {

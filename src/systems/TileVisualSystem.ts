@@ -10,7 +10,7 @@ import type { TargetPreviewPayload } from "./contracts/TileInteraction.ts";
 type TimedEffect = { mesh: THREE.Mesh; remaining: number };
 
 export class TileVisualSystem implements System {
-  private readonly hover = this.createOverlay(0xffff00, 0.8);
+  private readonly hover = this.createOverlay(0xff0000, 0.9);
   private readonly previewGroup = new THREE.Group();
   private readonly effects: TimedEffect[] = [];
 
@@ -56,15 +56,13 @@ export class TileVisualSystem implements System {
       return;
     }
 
-    this.positionAtGrid(this.hover, preview.target.grid);
+    this.positionAtGrid(this.hover, preview.target.grid, 0.4);
     this.hover.visible = true;
-    const hoverMaterial = this.hover.material as THREE.MeshBasicMaterial;
-    hoverMaterial.color.set(preview.isValid ? 0x32ff5c : 0xff3333);
 
-    if (!preview.isValid) return;
     for (const cell of preview.affectedCells) {
-      const marker = this.createOverlay(0x42a5f5, 0.22);
-      this.positionAtGrid(marker, cell);
+      if (cell.q === preview.target.grid.q && cell.r === preview.target.grid.r) continue;
+      const marker = this.createOverlay(0xff0000, 0.38);
+      this.positionAtGrid(marker, cell, 0.38);
       this.previewGroup.add(marker);
     }
   }
@@ -82,14 +80,14 @@ export class TileVisualSystem implements System {
 
   private playClick(grid: GridPos): void {
     const effect = this.createOverlay(0xffffff, 0.75);
-    this.positionAtGrid(effect, grid, 0.045);
+    this.positionAtGrid(effect, grid, 0.42);
     this.tileMap.group.add(effect);
     this.effects.push({ mesh: effect, remaining: 0.16 });
   }
 
   private playImpact(grid: GridPos): void {
     const effect = this.createOverlay(0xff8c00, 0.95);
-    this.positionAtGrid(effect, grid, 0.05);
+    this.positionAtGrid(effect, grid, 0.44);
     this.tileMap.group.add(effect);
     this.effects.push({ mesh: effect, remaining: 0.35 });
   }
@@ -102,16 +100,21 @@ export class TileVisualSystem implements System {
   }
 
   private createOverlay(color: number, opacity: number): THREE.Mesh {
-    const geometry = new THREE.CircleGeometry(TILE_SIZE * 0.86, 6);
+    // CircleGeometry начинается в плоскости XY. Поворачиваем его в XZ,
+    // сохраняя горизонтальность, и ориентируем как flat-top hex карты.
+    const geometry = new THREE.CircleGeometry(TILE_SIZE * 0.96, 6);
+    geometry.rotateZ(Math.PI / 6);
     geometry.rotateX(-Math.PI / 2);
-    geometry.rotateY(Math.PI / 6);
     const material = new THREE.MeshBasicMaterial({
       color,
       transparent: true,
       opacity,
+      depthTest: false,
       depthWrite: false,
       side: THREE.DoubleSide,
     });
-    return new THREE.Mesh(geometry, material);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.renderOrder = 1000;
+    return mesh;
   }
 }

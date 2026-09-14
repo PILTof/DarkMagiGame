@@ -1,5 +1,7 @@
 import type { Object3D } from "three";
 import * as THREE from "three";
+import type { MoveUnitCommand } from "../commands/MoveUnitCommand.ts";
+import type { CommandDispatcher } from "../commands/CommandDispatcher.ts";
 import type { EventBus } from "../core/EventBus";
 import type { Engine } from "../engine/Engine";
 import type { IsometricCamera } from "../engine/IsometricCamera";
@@ -12,7 +14,7 @@ import { TileMap } from "../world/TileMap";
 import { UnitBoundsTile } from "../world/tiles/UnitBoundsTile";
 import { HitTarget } from "./DTOs/HitTarget";
 import type { System } from "./System";
-import { PlayerCombat, PlayerMovement } from "./contracts/EventNamesInterface";
+import { PlayerCombat } from "./contracts/EventNamesInterface";
 
 export type BoundModifiers = {
     armor?: number;
@@ -22,6 +24,7 @@ export type BoundModifiers = {
 
 export class BoundsSystem implements System {
     private readonly tileMap: TileMap;
+    private readonly commandDispatcher: CommandDispatcher;
     private readonly boundYPos: number = 0.03;
     private readonly eventBus: EventBus;
     private readonly raycaster = new THREE.Raycaster();
@@ -41,12 +44,14 @@ export class BoundsSystem implements System {
 
     constructor(
         tileMap: TileMap,
+        commandDispatcher: CommandDispatcher,
         eventBus: EventBus,
         engine: Engine,
         camera: IsometricCamera,
         entityManager: EntityManager,
     ) {
         this.tileMap = tileMap;
+        this.commandDispatcher = commandDispatcher;
         this.eventBus = eventBus;
         this.engine = engine;
         this.camera = camera;
@@ -99,10 +104,16 @@ export class BoundsSystem implements System {
         if (!enemyBound) {
             this.action.run = false;
             this.action.target = null;
-            this.eventBus.emit(PlayerMovement.move_to, {
-                x: payload.target.worldPosition.x,
-                z: payload.target.worldPosition.z,
-            });
+            
+            // Dispatch MoveUnitCommand вместо события
+            const targetGrid = this.tileMap.worldToGrid(payload.target.worldPosition);
+            const command: MoveUnitCommand = {
+                unitId: "player",
+                targetGrid,
+                targetWorldX: payload.target.worldPosition.x,
+                targetWorldZ: payload.target.worldPosition.z,
+            };
+            this.commandDispatcher.dispatchMoveUnit(command);
             return;
         }
 
@@ -120,11 +131,15 @@ export class BoundsSystem implements System {
                 this.action.target = null;
                 return;
             }
+            
             const targetWorld = this.tileMap.gridToWorldPosition(targetGrid.q, targetGrid.r);
-            this.eventBus.emit(PlayerMovement.move_to, {
-                x: targetWorld.x,
-                z: targetWorld.z,
-            });
+            const command: MoveUnitCommand = {
+                unitId: "player",
+                targetGrid,
+                targetWorldX: targetWorld.x,
+                targetWorldZ: targetWorld.z,
+            };
+            this.commandDispatcher.dispatchMoveUnit(command);
         }
     }
 
@@ -134,14 +149,14 @@ export class BoundsSystem implements System {
             const sniperGridPos = this.tileMap.worldToGrid(sniper.position);
             // Если не удалось вычислить расстояние (например, нет игрока), останавливаем
             if (this.action.target.getGridDistance(sniperGridPos) === undefined) {
-                this.eventBus.emit(PlayerMovement.move_stop, {});
+                sniper.clearPath();
                 this.action.run = false;
-                this.action.target;
+                this.action.target = null;
                 return;
             }
 
             if (this.action.target.getGridDistance(sniperGridPos) <= Player.interactionDistance) {
-                this.eventBus.emit(PlayerMovement.move_stop, {});
+                sniper.clearPath();
                 this.eventBus.emit(PlayerCombat.click_target, {target: this.action.target, sniper: sniper})
                 this.action.run = false;
                 this.action.target = null;

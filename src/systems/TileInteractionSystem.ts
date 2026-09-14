@@ -1,27 +1,35 @@
 import type { EventBus } from "../core/EventBus.ts";
 import type { EntityManager } from "../entities/EntityManager.ts";
-import { ARCANE_BURST } from "../skills/ArcaneBurst.ts";
 import { getHexRadiusAffectedCells } from "../skills/HexRadiusTargeting.ts";
+import type { ActiveSkillSlot } from "../skills/ActiveSkillSlot.ts";
 import type { CastConditionContext, CastConditionResult } from "../skills/SkillDefinition.ts";
 import type { TileMap } from "../world/TileMap.ts";
 import type { System } from "./System.ts";
 import { Effects, PlayerCombat, TileInteraction } from "./contracts/EventNamesInterface.ts";
-import type { CastRequest, TargetPreviewPayload, TilePointerPayload } from "./contracts/TileInteraction.ts";
+import type { TargetPreviewPayload, TilePointerPayload } from "./contracts/TileInteraction.ts";
+import type { CommandDispatcher } from "../commands/CommandDispatcher.ts";
+import type { CastSkillCommand } from "../commands/CastSkillCommand.ts";
 
 export class TileInteractionSystem implements System {
   private readonly tileMap: TileMap;
   private readonly eventBus: EventBus;
   private readonly entityManager: EntityManager;
+  private readonly activeSkillSlot: ActiveSkillSlot;
+  private readonly commandDispatcher: CommandDispatcher;
   private targetingActive = false;
 
   constructor(
     tileMap: TileMap,
     eventBus: EventBus,
     entityManager: EntityManager,
+    activeSkillSlot: ActiveSkillSlot,
+    commandDispatcher: CommandDispatcher,
   ) {
     this.tileMap = tileMap;
     this.eventBus = eventBus;
     this.entityManager = entityManager;
+    this.activeSkillSlot = activeSkillSlot;
+    this.commandDispatcher = commandDispatcher;
     this.eventBus.on(TileInteraction.pointer_move, (payload) => {
       this.onPointerMove(payload as TilePointerPayload | null);
     });
@@ -44,8 +52,13 @@ export class TileInteractionSystem implements System {
 
   private onPointerClick(target: TilePointerPayload): void {
     if (!this.targetingActive) return;
+    
+    const activeSkill = this.activeSkillSlot.getActive();
+    if (!activeSkill) return;
+
     const preview = this.createPreview(target);
     this.eventBus.emit(Effects.tile_click, preview);
+    
     if (!preview.isValid) {
       this.eventBus.emit(PlayerCombat.cast_rejected, {
         reason: preview.invalidReason ?? "Skill cannot be cast on this tile.",
@@ -57,22 +70,28 @@ export class TileInteractionSystem implements System {
     const player = this.entityManager.getPlayer();
     if (!player) return;
 
-    const request: CastRequest = {
+    // Dispatch command instead of event
+    const command: CastSkillCommand = {
       casterId: player.id,
-      skillId: ARCANE_BURST.id,
-      target,
+      skillId: activeSkill.id,
+      targetGrid: target.grid,
     };
-    this.eventBus.emit(PlayerCombat.cast_spell, request);
+    
+    this.commandDispatcher.dispatchCastSkill(command);
   }
 
   private createPreview(target: TilePointerPayload | null): TargetPreviewPayload {
     if (!target) return { target: null, affectedCells: [], isValid: false };
+    
+    const activeSkill = this.activeSkillSlot.getActive();
+    if (!activeSkill) return { target: null, affectedCells: [], isValid: false };
+
     const affectedCells = getHexRadiusAffectedCells(
       this.tileMap,
       target.grid,
-      ARCANE_BURST.radius,
+      activeSkill.radius,
     );
-    const validation = this.validateCast(target.grid);
+    const validation = this.validateCast(target.grid, activeSkill);
     return {
       target,
       affectedCells,
@@ -81,7 +100,7 @@ export class TileInteractionSystem implements System {
     };
   }
 
-  private validateCast(target: { q: number; r: number }): CastConditionResult {
+  private validateCast(target: { q: number; r: number }, skill: import("../skills/SkillDefinition.ts").SkillDefinition): CastConditionResult {
     if (!this.tileMap.getTile(target.q, target.r)) {
       return { isValid: false, reason: "Target tile does not exist." };
     }
@@ -91,10 +110,10 @@ export class TileInteractionSystem implements System {
       caster,
       target,
       tileMap: this.tileMap,
-      skill: ARCANE_BURST,
+      skill,
     };
 
-    for (const condition of ARCANE_BURST.conditions) {
+    for (const condition of skill.conditions) {
       const result = condition.validate(context);
       if (!result.isValid) return result;
     }

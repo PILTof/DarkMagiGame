@@ -6,8 +6,8 @@ import type {
   TargetPreviewPayload,
   TilePointerPayload,
 } from "../systems/contracts/TileInteraction.ts";
+import type { GridPos } from "../world/GridCoords.ts";
 
-export type MoveToPayload = { x: number; z: number };
 export type TargetRequestedPayload = {
   event: PointerEvent;
   target: TilePointerPayload;
@@ -18,6 +18,23 @@ export type CastRejectedPayload = {
   target?: TilePointerPayload;
 };
 
+// Domain events (прошлое, facts)
+export type UnitMovedEvent = {
+  unitId: string;
+  fromGrid: GridPos;
+  toGrid: GridPos;
+};
+
+export type UnitStoppedEvent = {
+  unitId: string;
+  atGrid: GridPos;
+};
+
+export type UnitReachedWaypointEvent = {
+  unitId: string;
+  waypointGrid: GridPos;
+};
+
 export type GameEventMap = {
   "player:hit-target": { sniper: Unit; target: HitTarget };
   "player:target-requested": TargetRequestedPayload;
@@ -25,8 +42,6 @@ export type GameEventMap = {
   "player:cast-rejected": CastRejectedPayload;
   "player:cast-resolved": CastResolvedPayload;
   "player:dodge": undefined;
-  "player:move-to": MoveToPayload;
-  "player:move-stop": Record<string, never>;
   "tile:pointer-move": TilePointerPayload | null;
   "tile:pointer-click": TilePointerPayload;
   "tile:hover-changed": TilePointerPayload | null;
@@ -34,4 +49,9 @@ export type GameEventMap = {
   "tile:targeting-changed": { active: boolean };
   "effects:tile-click": TargetPreviewPayload;
   "effects:aoe-impact": CastResolvedPayload;
+  
+  // Domain events
+  "unit:moved": UnitMovedEvent;
+  "unit:stopped": UnitStoppedEvent;
+  "unit:reached-waypoint": UnitReachedWaypointEvent;
 };

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GridCoords, type GridPos } from "./GridCoords.ts";
+import { HexGrid } from "./hex/HexGrid.ts";
 import type { MapData, MapSpawn } from "./map/MapData.ts";
 import {
   createMapObject,
@@ -12,16 +13,15 @@ export class TileMap {
   readonly group = new THREE.Group();
   readonly objectsGroup = new THREE.Group();
   readonly tiles: Tile[][] = [];
-  private readonly blockedCells = new Set<string>();
+  readonly hexGrid: HexGrid;
   private readonly scene: THREE.Scene;
   private mapData: MapData | null = null;
-  private mapWidth = 0;
-  private mapHeight = 0;
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
     this.scene.add(this.group);
     this.scene.add(this.objectsGroup);
+    this.hexGrid = new HexGrid(0, 0);
   }
 
   async buildFromMap(
@@ -31,8 +31,14 @@ export class TileMap {
   ): Promise<void> {
     this.clear();
     this.mapData = mapData;
-    this.mapWidth = mapData.width;
-    this.mapHeight = mapData.height;
+    
+    // Инициализируем HexGrid с новыми размерами
+    Object.assign(this.hexGrid, new HexGrid(mapData.width, mapData.height));
+    
+    // Регистрируем spawn points в HexGrid
+    for (const spawn of mapData.spawns) {
+      this.hexGrid.addSpawn(spawn.type, spawn.name, spawn.q, spawn.r);
+    }
 
     await this.buildTerrain(mapData, tileAssets);
     await this.buildObjects(mapData, objectAssets);
@@ -40,37 +46,35 @@ export class TileMap {
   }
 
   get width(): number {
-    return this.mapWidth;
+    return this.hexGrid.getWidth();
   }
 
   get height(): number {
-    return this.mapHeight;
+    return this.hexGrid.getHeight();
   }
 
   getTile(q: number, r: number): Tile | null {
-    if (q < 0 || r < 0 || q >= this.mapWidth || r >= this.mapHeight) {
+    if (!this.hexGrid.isInBounds(q, r)) {
       return null;
     }
     return this.tiles[r]?.[q] ?? null;
   }
 
   isWalkable(q: number, r: number): boolean {
-    const tile = this.getTile(q, r);
-    if (!tile?.walkable) return false;
-    return !this.blockedCells.has(this.cellKey(q, r));
+    return this.hexGrid.isWalkable(q, r);
   }
 
   getPlayerSpawn(): GridPos {
-    const spawn = this.mapData?.spawns.find((entry) => entry.type === "player");
-    if (spawn && this.isWalkable(spawn.q, spawn.r)) {
-      return { q: spawn.q, r: spawn.r };
-    }
-    return this.findFallbackSpawn();
+    return this.hexGrid.getPlayerSpawn();
   }
 
   getSpawns(type?: MapSpawn["type"]): MapSpawn[] {
     const spawns = this.mapData?.spawns ?? [];
     return type ? spawns.filter((spawn) => spawn.type === type) : spawns;
+  }
+
+  getHexGrid(): HexGrid {
+    return this.hexGrid;
   }
 
   /** Мировая позиция центра гекса с учётом смещения карты. */
@@ -114,6 +118,9 @@ export class TileMap {
 
         const tile = createTile(type, { q, r });
         row.push(tile);
+        
+        // Регистрируем walkability в HexGrid
+        this.hexGrid.setBaseWalkable(q, r, tile.walkable);
 
         const worldPos = GridCoords.gridToWorld(q, r);
 
@@ -151,14 +158,7 @@ export class TileMap {
           this.objectsGroup.add(root);
 
           for (const cell of instance.getBlockingCells()) {
-            if (
-              cell.q >= 0 &&
-              cell.r >= 0 &&
-              cell.q < this.mapWidth &&
-              cell.r < this.mapHeight
-            ) {
-              this.blockedCells.add(this.cellKey(cell.q, cell.r));
-            }
+            this.hexGrid.blockCell(cell.q, cell.r);
           }
         }),
       );
@@ -167,45 +167,22 @@ export class TileMap {
     await Promise.all(loadTasks);
   }
 
-  private findFallbackSpawn(): GridPos {
-    const centerQ = Math.floor(this.mapWidth / 2);
-    const centerR = Math.floor(this.mapHeight / 2);
-
-    if (this.isWalkable(centerQ, centerR)) {
-      return { q: centerQ, r: centerR };
-    }
-
-    for (let r = 0; r < this.mapHeight; r++) {
-      for (let q = 0; q < this.mapWidth; q++) {
-        if (this.isWalkable(q, r)) {
-          return { q, r };
-        }
-      }
-    }
-
-    return { q: centerQ, r: centerR };
-  }
-
   private centerMap(): void {
-    const centerQ = (this.mapWidth - 1) / 2;
-    const centerR = (this.mapHeight - 1) / 2;
+    const width = this.hexGrid.getWidth();
+    const height = this.hexGrid.getHeight();
+    const centerQ = (width - 1) / 2;
+    const centerR = (height - 1) / 2;
     const center = GridCoords.gridToWorld(centerQ, centerR);
     const offset = new THREE.Vector3(-center.x, 0, -center.z);
     this.group.position.copy(offset);
     this.objectsGroup.position.copy(offset);
   }
 
-  private cellKey(q: number, r: number): string {
-    return `${q},${r}`;
-  }
-
   private clear(): void {
     this.group.clear();
     this.objectsGroup.clear();
     this.tiles.length = 0;
-    this.blockedCells.clear();
+    this.hexGrid.clear();
     this.mapData = null;
-    this.mapWidth = 0;
-    this.mapHeight = 0;
   }
 }
